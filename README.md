@@ -1,10 +1,10 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.2.0 — Agent API & Real AI Conversation Engine**
+**CORTANA CORE v0.3.0 — Voice Core & Real-Time Conversation**
 
 CORTANA is a browser-first, multi-platform AI system project. This milestone adds a server-side, OpenAI-compatible streaming conversation API to the browser foundation.
 
-> This release is a visual and architectural foundation. A real model is used when the server-side provider secret is configured. Persistent memory, live microphone processing, camera perception, and autonomous code deployment are not yet connected. The interface identifies these capabilities as not connected.
+> This release is a visual and architectural foundation. A real model is used when the server-side provider secret is configured. Persistent memory, camera perception, and autonomous code deployment are not yet connected. Voice input/output uses browser speech APIs where supported. The interface identifies these capabilities as not connected.
 
 ## Goals
 
@@ -70,3 +70,13 @@ The repository includes `wrangler.toml`. Do not commit Cloudflare tokens, accoun
 The product concept follows the user's **CORTANA — Instrukcja Systemu Żywego v2.0**: sensory input, emotional state model, personality core, holographic body, learning loop, layered memory, and evolution journal. These are implemented as software modules and state models, not as claims of biological life or consciousness.
 
 See [Project Specification](docs/PROJECT_SPEC.md) and [Agent API](docs/AGENT_API.md).
+
+## Voice Core v0.3.0
+
+- Polish speech recognition through the browser Web Speech API where supported.
+- Speech synthesis for completed assistant responses.
+- Explicit microphone start/stop controls, voice-output toggle, and stop action.
+- The browser requests microphone permission when the user starts listening. Recognition support and processing behavior depend on the browser; some implementations may send audio to a browser/vendor speech service.
+- CORTANA CORE does not persist raw microphone audio. Recognition text becomes a normal chat message only after the user presses Send.
+- Voice is an optional enhancement; text chat remains available on unsupported browsers.
+
