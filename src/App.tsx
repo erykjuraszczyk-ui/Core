@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import HologramScene from "./components/HologramScene";
 import { streamAgentReply, type AgentMessage } from "./lib/agent";
+import { createSpeechRecognition, speakText, stopSpeaking, type CortanaSpeechRecognition } from "./lib/voice";
 
 type Message = {
   id: number;
@@ -37,6 +38,10 @@ export default function App() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [voiceOutput, setVoiceOutput] = useState(true);
+  const [voiceNotice, setVoiceNotice] = useState("GŁOS GOTOWY");
+  const recognitionRef = useRef<CortanaSpeechRecognition | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -54,7 +59,7 @@ export default function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function startListening() {\n    const recognition = createSpeechRecognition();\n    if (!recognition) { setVoiceNotice("BRAK OBSŁUGI ROZPOZNAWANIA MOWY"); return; }\n    let finalTranscript = "";\n    recognition.onstart = () => { setIsListening(true); setVoiceNotice("NASŁUCH AKTYWNY · PL-PL"); };\n    recognition.onresult = (event) => {\n      let interim = "";\n      for (let index = event.resultIndex; index < event.results.length; index += 1) {\n        const result = event.results[index];\n        const transcript = result?.[0]?.transcript || "";\n        if (result?.isFinal) finalTranscript += transcript; else interim += transcript;\n      }\n      setDraft((finalTranscript + interim).trim());\n    };\n    recognition.onerror = (event) => { setVoiceNotice(event.error === "not-allowed" ? "BRAK ZGODY NA MIKROFON" : "BŁĄD MIKROFONU"); setIsListening(false); };\n    recognition.onend = () => { setIsListening(false); setVoiceNotice(finalTranscript.trim() ? "TEKST ROZPOZNANY · NACIŚNIJ WYŚLIJ" : "GŁOS GOTOWY"); recognitionRef.current = null; };\n    recognitionRef.current = recognition;\n    try { recognition.start(); } catch { setVoiceNotice("NIE MOŻNA URUCHOMIĆ MIKROFONU"); recognitionRef.current = null; }\n  }\n\n  function stopListening() { recognitionRef.current?.stop(); setIsListening(false); }\n\n  function stopVoice() { abortControllerRef.current?.abort(); stopSpeaking(); recognitionRef.current?.abort(); setIsListening(false); setVoiceNotice("GŁOS ZATRZYMANY"); }\n\n  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = draft.trim();
     if (!text || isSending) return;
@@ -105,7 +110,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.2.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.3.0</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
@@ -123,7 +128,7 @@ export default function App() {
             <button className={`primary-button ${sessionActive ? "is-active" : ""}`} onClick={() => setSessionActive((active) => !active)}>
               <span className="button-orb" />{sessionActive ? "ZAKOŃCZ SESJĘ" : "AKTYWUJ SESJĘ"}
             </button>
-            <span className="action-note">SERWEROWY MODEL AI · STREAMING SSE</span>
+            <span className="action-note">VOICE CORE · PL-PL · STREAMING SSE</span>
           </div>
         </div>
 
@@ -170,7 +175,7 @@ export default function App() {
         <section className="conversation-panel panel">
           <div className="section-heading">
             <div><p className="eyebrow">COMMUNICATION CHANNEL</p><h2>Interfejs rozmowy</h2></div>
-            <span className="channel-status"><i /> {isSending ? "STREAMING" : apiStatus === "online" ? "API READY" : "API CHECK"}</span>
+            <span className="channel-status"><i /> {isListening ? "LISTENING" : isSending ? "STREAMING" : apiStatus === "online" ? "API READY" : "API CHECK"}</span>
           </div>
           <div className="message-list" aria-live="polite">
             {messages.map((message) => (
@@ -181,12 +186,12 @@ export default function App() {
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <form className="composer" onSubmit={handleSubmit}>
+          <div className="voice-toolbar" aria-label="Sterowanie głosem">\n            <button type="button" className={`voice-button ${isListening ? "voice-active" : ""}`} onClick={isListening ? stopListening : startListening} aria-pressed={isListening}>{isListening ? "■ ZATRZYMAJ NASŁUCH" : "◉ MÓW DO CORTANY"}</button>\n            <button type="button" className={`voice-button ${voiceOutput ? "voice-selected" : ""}`} onClick={() => { setVoiceOutput((enabled) => !enabled); stopSpeaking(); }} aria-pressed={voiceOutput}>GŁOS {voiceOutput ? "WŁ." : "WYŁ."}</button>\n            <button type="button" className="voice-button voice-stop" onClick={stopVoice} disabled={!isSending && !isListening}>STOP</button>\n          </div>\n          <div className="voice-notice" role="status">{voiceNotice} · ROZPOZNAWANIE WYKONUJE PRZEGLĄDARKA</div>\n          <form className="composer" onSubmit={handleSubmit}>
             <label className="sr-only" htmlFor="message-input">Wiadomość do CORTANY</label>
             <input id="message-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Napisz do CORTANY..." maxLength={4000} />
             <button type="submit" aria-label="Wyślij wiadomość" disabled={!draft.trim() || isSending}><span>↗</span></button>
           </form>
-          <div className="composer-note">ROZMOWA PRZEZ SERWEROWY MODEL AI · PAMIĘĆ TRWAŁA WYŁĄCZONA</div>
+          <div className="composer-note">ROZMOWA AI · MIKROFON URUCHAMIASZ RĘCZNIE · PAMIĘĆ TRWAŁA WYŁĄCZONA</div>
         </section>
       </section>
 
