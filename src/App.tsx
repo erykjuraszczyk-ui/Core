@@ -13,13 +13,14 @@ type Message = {
 const initialMessages: Message[] = [{
   id: 1,
   role: "cortana",
-  text: "Interfejs CORTANA CORE został uruchomiony. Jestem w trybie demonstracyjnym — model AI i pamięć nie zostały jeszcze podłączone.",
+  text: "CORTANA CORE v0.3.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała pozostaje wyłączona.",
   time: "SYSTEM",
 }];
 
 const modules = [
   { name: "Holographic Body", detail: "Renderer 3D", state: "ACTIVE" },
-  { name: "Sensory Input", detail: "Oczekiwanie na zgodę", state: "LOCKED" },
+  { name: "Sensory Input", detail: "Ręczne uruchomienie mikrofonu", state: "LOCKED" },
+  { name: "Voice Core", detail: "Speech Recognition + Synthesis", state: "BROWSER API" },
   { name: "Emotional Engine", detail: "Model stanów", state: "LOCAL MODEL" },
   { name: "Long-Term Memory", detail: "Magazyn niepodłączony", state: "OFFLINE" },
   { name: "Learning Loop", detail: "Zatwierdzony feedback", state: "OBSERVE" },
@@ -197,7 +198,7 @@ export default function App() {
         </div>
 
         <aside className="identity-panel">
-          <div className="panel-heading"><span className="eyebrow">SYSTEM IDENTITY</span><span className="panel-index">01 / 06</span></div>
+          <div className="panel-heading"><span className="eyebrow">SYSTEM IDENTITY</span><span className="panel-index">01 / 07</span></div>
           <div className="identity-title"><h2>CORTANA</h2><span className="identity-subtitle">Adaptive digital agent</span></div>
           <p className="identity-text">System rozwijany modułowo. Jego możliwości wynikają z podłączonych modeli, danych, uprawnień i przetestowanych komponentów.</p>
           <div className="identity-divider" />
@@ -214,7 +215,7 @@ export default function App() {
         <section className="modules-panel panel">
           <div className="section-heading">
             <div><p className="eyebrow">ARCHITECTURE / LIVE MAP</p><h2>Rdzeń systemu</h2></div>
-            <span className="panel-index">06 MODULES</span>
+            <span className="panel-index">07 MODULES</span>
           </div>
           <div className="module-list">
             {modules.map((module, index) => (
