@@ -18,7 +18,7 @@ CORTANA is a browser-first, multi-platform AI agent project. v0.4.0 adds opt-in 
 
 ## Stack
 
-React 19 · TypeScript · Vite 8 · Three.js · Cloudflare Pages Functions · OpenAI-compatible streaming API.
+React 19 · TypeScript · Vite 8 · Three.js · Cloudflare Pages Functions · D1 · OpenAI-compatible streaming API.
 
 D1 is the v0.4.0 memory store. R2 and Vectorize remain future integration targets.
 
