@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.1.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.2.0 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -30,7 +30,7 @@ The source's human-like descriptions are treated as product metaphors. Software 
 
 ### Browser layer
 
-React and TypeScript implement the interface. Three.js renders the hologram. Device APIs are accessed only through explicit, permission-gated adapters. The current chat is a local UI demonstration, not a connected AI assistant.
+React and TypeScript implement the interface. Three.js renders the hologram. Device APIs are accessed only through explicit, permission-gated adapters. The chat sends validated conversation history to a server-side provider adapter and renders Server-Sent Event tokens. Provider secrets remain server-side.
 
 ### Server boundary
 
@@ -43,7 +43,7 @@ Cloudflare Pages Functions is the first API boundary. Model requests, user ident
 - Vectorize: semantic retrieval from approved document and memory chunks.
 - Model provider: a replaceable adapter selected through server-side configuration.
 
-No database or external AI provider is provisioned in v0.1.0.
+No database is provisioned in v0.2.0. A provider becomes active only after the server-side API secret is configured.
 
 ## 4. Core operating model
 
@@ -99,7 +99,7 @@ Emotion inference from facial expression or voice is uncertain. Any such result 
 
 | Version | Milestone | Acceptance focus |
 |---|---|---|
-| 0.1.0 | Browser foundation | UI, responsive hologram, health endpoint, project contracts |
+| 0.1.0 | Browser foundation | UI, responsive hologram, health endpoint, project contracts |\n| 0.2.0 | Agent API | Server-side provider adapter, validation, streaming SSE, error handling |
 | 0.2.0 | Agent API | Typed schemas, session boundary, provider adapter |
 | 0.3.0 | Conversation Core | Connected model, streaming, cancellation |
 | 0.4.0 | Voice & Perception | Opt-in microphone/camera, speech adapters |
@@ -115,7 +115,7 @@ Implemented in this branch:
 - React/TypeScript/Vite application shell.
 - Responsive dashboard and procedural Three.js hologram.
 - Local-only demonstration conversation.
-- `GET /api/health` endpoint.
+- `GET /api/health` endpoint with provider readiness flag.\n- `POST /api/chat` with validated messages and streamed model output.\n- Server-only provider credentials and model configuration.
 - Cloudflare Pages configuration.
 - CI workflow and governance documentation.
 

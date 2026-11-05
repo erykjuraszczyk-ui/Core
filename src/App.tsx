@@ -1,5 +1,6 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import HologramScene from "./components/HologramScene";
+import { streamAgentReply, type AgentMessage } from "./lib/agent";
 
 type Message = {
   id: number;
@@ -34,6 +35,8 @@ export default function App() {
   const [messages, setMessages] = useState<Message[]>(initialMessages);
   const [apiStatus, setApiStatus] = useState<"checking" | "online" | "offline">("checking");
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const [isSending, setIsSending] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -51,23 +54,46 @@ export default function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
-  function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = draft.trim();
-    if (!text) return;
+    if (!text || isSending) return;
 
     const now = Date.now();
+    const history: AgentMessage[] = [
+      ...messages.filter((message) => message.role !== "cortana" || message.time !== "SYSTEM")
+        .map((message) => ({ role: message.role === "user" ? "user" as const : "assistant" as const, content: message.text })),
+      { role: "user", content: text },
+    ];
+    const assistantId = now + 1;
     setMessages((current) => [
       ...current,
       { id: now, role: "user", text, time: formatTime() },
-      {
-        id: now + 1,
-        role: "cortana",
-        text: "Wiadomość dotarła do interfejsu. Silnik konwersacyjny AI nie jest jeszcze podłączony — ten etap sprawdza UI, a nie generowanie odpowiedzi przez model.",
-        time: "DEMO",
-      },
+      { id: assistantId, role: "cortana", text: "", time: "AI · STREAM" },
     ]);
     setDraft("");
+    setIsSending(true);
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+
+    try {
+      await streamAgentReply(history, {
+        signal: controller.signal,
+        onToken: (token) => {
+          setMessages((current) => current.map((message) =>
+            message.id === assistantId ? { ...message, text: message.text + token } : message
+          ));
+        },
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Nieznany błąd połączenia.";
+      setMessages((current) => current.map((item) =>
+        item.id === assistantId ? { ...item, text: item.text ? item.text + "\\n\\n[Połączenie przerwane] " + message : message, time: "ERROR" } : item
+      ));
+    } finally {
+      abortControllerRef.current = null;
+      setIsSending(false);
+    }
   }
 
   const apiLabel = apiStatus === "online" ? "API ONLINE" : apiStatus === "checking" ? "API CHECK" : "API OFFLINE";
@@ -79,7 +105,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.1.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.2.0</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
@@ -97,7 +123,7 @@ export default function App() {
             <button className={`primary-button ${sessionActive ? "is-active" : ""}`} onClick={() => setSessionActive((active) => !active)}>
               <span className="button-orb" />{sessionActive ? "ZAKOŃCZ SESJĘ" : "AKTYWUJ SESJĘ"}
             </button>
-            <span className="action-note">LOKALNY TRYB DEMO · BEZ POŁĄCZENIA Z LLM</span>
+            <span className="action-note">SERWEROWY MODEL AI · STREAMING SSE</span>
           </div>
         </div>
 
@@ -144,7 +170,7 @@ export default function App() {
         <section className="conversation-panel panel">
           <div className="section-heading">
             <div><p className="eyebrow">COMMUNICATION CHANNEL</p><h2>Interfejs rozmowy</h2></div>
-            <span className="channel-status"><i /> LOCAL</span>
+            <span className="channel-status"><i /> {isSending ? "STREAMING" : apiStatus === "online" ? "API READY" : "API CHECK"}</span>
           </div>
           <div className="message-list" aria-live="polite">
             {messages.map((message) => (
@@ -157,10 +183,10 @@ export default function App() {
           </div>
           <form className="composer" onSubmit={handleSubmit}>
             <label className="sr-only" htmlFor="message-input">Wiadomość do CORTANY</label>
-            <input id="message-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Napisz wiadomość testową..." maxLength={1000} />
-            <button type="submit" aria-label="Wyślij wiadomość" disabled={!draft.trim()}><span>↗</span></button>
+            <input id="message-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Napisz do CORTANY..." maxLength={4000} />
+            <button type="submit" aria-label="Wyślij wiadomość" disabled={!draft.trim() || isSending}><span>↗</span></button>
           </form>
-          <div className="composer-note">WIADOMOŚCI SĄ OBSŁUGIWANE LOKALNIE · PAMIĘĆ TRWAŁA WYŁĄCZONA</div>
+          <div className="composer-note">ROZMOWA PRZEZ SERWEROWY MODEL AI · PAMIĘĆ TRWAŁA WYŁĄCZONA</div>
         </section>
       </section>
 
