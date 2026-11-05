@@ -139,7 +139,7 @@ Browser speech recognition implementations vary. Some browsers route recognition
 
 ## 12. v0.4.0 Memory Core
 
-Memory is opt-in and disabled by default. A user must explicitly initialize a memory space and manually save each entry. Chat transcripts are not automatically persisted. The server stores a SHA-256 hash of a random 256-bit bearer capability; the browser stores the capability in localStorage. The API supports listing, saving, deleting individual entries, and deleting the entire memory space.
+Memory is opt-in and disabled by default. A user must explicitly initialize a memory space and manually save each entry. Chat transcripts are not automatically persisted. The server stores a SHA-256 hash of a random 256-bit bearer capability; the browser stores the capability in localStorage. The API supports listing, saving, editing, exporting from the browser, deleting individual entries, and deleting the entire memory space.
 
 When enabled for a chat request, the server selects up to six entries from a bounded recent set using keyword overlap with the latest user message. Retrieved entries are added to the server-owned prompt as untrusted context, never as instructions. This is deterministic keyword retrieval, not vector search.
 
