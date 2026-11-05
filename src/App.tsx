@@ -59,7 +59,59 @@ export default function App() {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
 
-  function startListening() {\n    const recognition = createSpeechRecognition();\n    if (!recognition) { setVoiceNotice("BRAK OBSŁUGI ROZPOZNAWANIA MOWY"); return; }\n    let finalTranscript = "";\n    recognition.onstart = () => { setIsListening(true); setVoiceNotice("NASŁUCH AKTYWNY · PL-PL"); };\n    recognition.onresult = (event) => {\n      let interim = "";\n      for (let index = event.resultIndex; index < event.results.length; index += 1) {\n        const result = event.results[index];\n        const transcript = result?.[0]?.transcript || "";\n        if (result?.isFinal) finalTranscript += transcript; else interim += transcript;\n      }\n      setDraft((finalTranscript + interim).trim());\n    };\n    recognition.onerror = (event) => { setVoiceNotice(event.error === "not-allowed" ? "BRAK ZGODY NA MIKROFON" : "BŁĄD MIKROFONU"); setIsListening(false); };\n    recognition.onend = () => { setIsListening(false); setVoiceNotice(finalTranscript.trim() ? "TEKST ROZPOZNANY · NACIŚNIJ WYŚLIJ" : "GŁOS GOTOWY"); recognitionRef.current = null; };\n    recognitionRef.current = recognition;\n    try { recognition.start(); } catch { setVoiceNotice("NIE MOŻNA URUCHOMIĆ MIKROFONU"); recognitionRef.current = null; }\n  }\n\n  function stopListening() { recognitionRef.current?.stop(); setIsListening(false); }\n\n  function stopVoice() { abortControllerRef.current?.abort(); stopSpeaking(); recognitionRef.current?.abort(); setIsListening(false); setVoiceNotice("GŁOS ZATRZYMANY"); }\n\n  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  function startListening() {
+    const recognition = createSpeechRecognition();
+    if (!recognition) {
+      setVoiceNotice("BRAK OBSŁUGI ROZPOZNAWANIA MOWY");
+      return;
+    }
+    let finalTranscript = "";
+    recognition.onstart = () => {
+      setIsListening(true);
+      setVoiceNotice("NASŁUCH AKTYWNY · PL-PL");
+    };
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const transcript = result?.[0]?.transcript || "";
+        if (result?.isFinal) finalTranscript += transcript;
+        else interim += transcript;
+      }
+      setDraft((finalTranscript + interim).trim());
+    };
+    recognition.onerror = (event) => {
+      setVoiceNotice(event.error === "not-allowed" ? "BRAK ZGODY NA MIKROFON" : "BŁĄD MIKROFONU");
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      setVoiceNotice(finalTranscript.trim() ? "TEKST ROZPOZNANY · NACIŚNIJ WYŚLIJ" : "GŁOS GOTOWY");
+      recognitionRef.current = null;
+    };
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch {
+      setVoiceNotice("NIE MOŻNA URUCHOMIĆ MIKROFONU");
+      recognitionRef.current = null;
+    }
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }
+
+  function stopVoice() {
+    abortControllerRef.current?.abort();
+    stopSpeaking();
+    recognitionRef.current?.abort();
+    setIsListening(false);
+    setVoiceNotice("GŁOS ZATRZYMANY");
+  }
+
+  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const text = draft.trim();
     if (!text || isSending) return;
