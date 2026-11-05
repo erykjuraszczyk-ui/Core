@@ -1,10 +1,10 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.1.0 — Browser Foundation**
+**CORTANA CORE v0.2.0 — Agent API & Real AI Conversation Engine**
 
-CORTANA is a browser-first, multi-platform AI system project. This milestone establishes the holographic interface, application structure, API health endpoint, and governance for future learning and controlled self-improvement.
+CORTANA is a browser-first, multi-platform AI system project. This milestone adds a server-side, OpenAI-compatible streaming conversation API to the browser foundation.
 
-> This release is a visual and architectural foundation. It does not yet include a connected language model, persistent memory, live microphone processing, camera perception, or autonomous code deployment. The interface identifies these capabilities as not connected.
+> This release is a visual and architectural foundation. A real model is used when the server-side provider secret is configured. Persistent memory, live microphone processing, camera perception, and autonomous code deployment are not yet connected. The interface identifies these capabilities as not connected.
 
 ## Goals
 
@@ -18,7 +18,7 @@ CORTANA is a browser-first, multi-platform AI system project. This milestone est
 
 ## Stack
 
-React 19 · TypeScript · Vite 8 · Three.js · Cloudflare Pages Functions.
+React 19 · TypeScript · Vite 8 · Three.js · Cloudflare Pages Functions · OpenAI-compatible streaming API.
 
 Cloudflare D1, R2, and Vectorize are planned integration targets; they are not provisioned by this commit.
 
@@ -69,4 +69,4 @@ The repository includes `wrangler.toml`. Do not commit Cloudflare tokens, accoun
 
 The product concept follows the user's **CORTANA — Instrukcja Systemu Żywego v2.0**: sensory input, emotional state model, personality core, holographic body, learning loop, layered memory, and evolution journal. These are implemented as software modules and state models, not as claims of biological life or consciousness.
 
-See [Project Specification](docs/PROJECT_SPEC.md).
+See [Project Specification](docs/PROJECT_SPEC.md) and [Agent API](docs/AGENT_API.md).

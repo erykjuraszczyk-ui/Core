@@ -1,16 +1,23 @@
-export async function onRequestGet(): Promise<Response> {
+type Env = {
+  CORTANA_LLM_API_KEY?: string;
+  CORTANA_LLM_MODEL?: string;
+};
+
+export async function onRequestGet(context: { env: Env }): Promise<Response> {
+  const configured = Boolean(context.env.CORTANA_LLM_API_KEY);
   return new Response(JSON.stringify({
     service: "cortana-core",
-    version: "0.1.0",
+    version: "0.2.0",
     status: "ok",
-    stage: "browser-foundation",
+    stage: "agent-api",
     integrations: {
-      languageModel: false,
+      languageModel: configured,
       persistentMemory: false,
       speechRecognition: false,
       vision: false,
       autonomousCodeChanges: false,
     },
+    model: configured ? (context.env.CORTANA_LLM_MODEL || "gpt-4o-mini") : null,
     governance: { selfImprovement: "proposal-review-test-approval-rollback" },
     timestamp: new Date().toISOString(),
   }), {
