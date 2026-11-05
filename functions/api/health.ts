@@ -13,7 +13,8 @@ export async function onRequestGet(context: { env: Env }): Promise<Response> {
     integrations: {
       languageModel: configured,
       persistentMemory: false,
-      speechRecognition: "browser-api",\n      speechSynthesis: "browser-api",
+      speechRecognition: "browser-api",
+      speechSynthesis: "browser-api",
       vision: false,
       autonomousCodeChanges: false,
     },
