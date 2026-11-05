@@ -1,18 +1,19 @@
 type Env = {
   CORTANA_LLM_API_KEY?: string;
   CORTANA_LLM_MODEL?: string;
+  CORTANA_DB?: unknown;
 };
 
 export async function onRequestGet(context: { env: Env }): Promise<Response> {
   const configured = Boolean(context.env.CORTANA_LLM_API_KEY);
   return new Response(JSON.stringify({
     service: "cortana-core",
-    version: "0.3.0",
+    version: "0.4.0",
     status: "ok",
-    stage: "voice-core",
+    stage: "memory-core",
     integrations: {
       languageModel: configured,
-      persistentMemory: false,
+      persistentMemory: Boolean(context.env.CORTANA_DB),
       speechRecognition: "browser-api",
       speechSynthesis: "browser-api",
       vision: false,
