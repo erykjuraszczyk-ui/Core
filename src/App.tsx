@@ -14,7 +14,7 @@ type Message = {
 const initialMessages: Message[] = [{
   id: 1,
   role: "cortana",
-  text: "CORTANA CORE v0.3.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała pozostaje wyłączona.",
+  text: "CORTANA CORE v0.4.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
   time: "SYSTEM",
 }];
 
@@ -23,7 +23,7 @@ const modules = [
   { name: "Sensory Input", detail: "Ręczne uruchomienie mikrofonu", state: "LOCKED" },
   { name: "Voice Core", detail: "Speech Recognition + Synthesis", state: "BROWSER API" },
   { name: "Emotional Engine", detail: "Model stanów", state: "LOCAL MODEL" },
-  { name: "Long-Term Memory", detail: "Magazyn niepodłączony", state: "OFFLINE" },
+  { name: "Long-Term Memory", detail: "D1 · zapis zatwierdzony przez użytkownika", state: "OPT-IN" },
   { name: "Learning Loop", detail: "Zatwierdzony feedback", state: "OBSERVE" },
   { name: "Self-Programming", detail: "Zmiany wymagają przeglądu", state: "GUARDED" },
 ];
@@ -248,7 +248,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.3.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.4.0</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
