@@ -2,7 +2,7 @@
 
 **CORTANA CORE v0.4.0 — Memory Core & Context Engine**
 
-CORTANA is a browser-first, multi-platform AI system project. This milestone adds a server-side, OpenAI-compatible streaming conversation API to the browser foundation.
+CORTANA is a browser-first, multi-platform AI agent project. v0.4.0 adds opt-in persistent memory and context retrieval on top of the streaming Agent API and browser Voice Core.
 
 > This milestone adds opt-in, user-managed persistent memory on Cloudflare D1 and bounded context retrieval. The model provider still requires a server-side secret. Camera perception and autonomous code deployment are not connected. Voice uses browser speech APIs where supported.
 
@@ -20,7 +20,7 @@ CORTANA is a browser-first, multi-platform AI system project. This milestone add
 
 React 19 · TypeScript · Vite 8 · Three.js · Cloudflare Pages Functions · OpenAI-compatible streaming API.
 
-Cloudflare D1, R2, and Vectorize are planned integration targets; they are not provisioned by this commit.
+D1 is the v0.4.0 memory store. R2 and Vectorize remain future integration targets.
 
 ## Run locally
 
