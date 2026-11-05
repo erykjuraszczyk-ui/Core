@@ -90,7 +90,7 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
   const space = await findMemorySpace(env.CORTANA_DB, token);
   if (!space) return json({ error: "Nieprawidłowy token pamięci." }, 401);
 
-  if (body.action !== "save") return json({ error: "Nieznana operacja pamięci." }, 400);
+  if (body.action !== "save" && body.action !== "update") return json({ error: "Nieznana operacja pamięci." }, 400);
   if (typeof body.content !== "string" || !body.content.trim() || body.content.length > 4000) {
     return json({ error: "Treść pamięci musi mieć od 1 do 4000 znaków." }, 400);
   }
@@ -98,6 +98,15 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
     .bind(space.id).first<{ total: number }>();
   if ((count?.total || 0) >= 100) return json({ error: "Pamięć osiągnęła limit 100 wpisów. Usuń niepotrzebne wpisy przed dodaniem kolejnych." }, 409);
   const kind: MemoryKind = body.kind === "episode" ? "episode" : "semantic";
+  if (body.action === "update") {
+    if (typeof body.id !== "string" || !/^[a-f0-9-]{36}$/i.test(body.id)) return json({ error: "Nieprawidłowy identyfikator wpisu." }, 400);
+    const now = new Date().toISOString();
+    const updated = await env.CORTANA_DB.prepare(
+      "UPDATE memory_entries SET kind = ?, content = ?, updated_at = ? WHERE id = ? AND space_id = ?",
+    ).bind(kind, body.content.trim(), now, body.id, space.id).run();
+    if (!updated.meta?.changes) return json({ error: "Nie znaleziono wpisu pamięci." }, 404);
+    return json({ updated: true, id: body.id, kind, content: body.content.trim(), updatedAt: now });
+  }
   const tags = Array.isArray(body.tags)
     ? body.tags.filter((tag): tag is string => typeof tag === "string").map((tag) => tag.trim().slice(0, 40)).filter(Boolean).slice(0, 10)
     : [];
