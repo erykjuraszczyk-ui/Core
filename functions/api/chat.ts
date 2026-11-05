@@ -125,7 +125,7 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
     const latestUserMessage = validated.messages[validated.messages.length - 1]?.content || "";
     const memories = await retrieveMemoryContext(env.CORTANA_DB, space.id, latestUserMessage);
     if (memories.length) {
-      memoryContext = memories.map((entry, index) => `[${index + 1}] (${entry.kind}) ${entry.content}`).join("\\n").slice(0, 7000);
+      memoryContext = memories.map((entry, index) => `[${index + 1}] (${entry.kind}) ${entry.content}`).join("\n").slice(0, 7000);
     }
   }
 
