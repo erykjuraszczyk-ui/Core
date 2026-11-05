@@ -58,3 +58,10 @@ export async function deleteMemory(token: string, id?: string): Promise<void> {
   const path = id ? `/api/memory?id=${encodeURIComponent(id)}` : "/api/memory";
   await request<{ deleted: boolean }>(path, token, { method: "DELETE" });
 }
+
+export async function updateMemory(token: string, id: string, content: string, kind: MemoryEntry["kind"]): Promise<void> {
+  await request<{ updated: boolean }>("/api/memory", token, {
+    method: "POST",
+    body: JSON.stringify({ action: "update", id, content, kind }),
+  });
+}
