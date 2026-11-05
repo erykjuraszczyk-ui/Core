@@ -137,7 +137,8 @@ export default function App() {
       await streamAgentReply(history, {
         signal: controller.signal,
         onToken: (token) => {
-          assistantText += token;\n          setMessages((current) => current.map((message) =>
+          assistantText += token;
+          setMessages((current) => current.map((message) =>
             message.id === assistantId ? { ...message, text: message.text + token } : message
           ));
         },
