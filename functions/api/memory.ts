@@ -121,6 +121,7 @@ export async function onRequestDelete(context: { request: Request; env: Env }): 
     await env.CORTANA_DB.prepare("DELETE FROM memory_entries WHERE id = ? AND space_id = ?").bind(id, space.id).run();
     return json({ deleted: true });
   }
+  await env.CORTANA_DB.prepare("DELETE FROM memory_entries WHERE space_id = ?").bind(space.id).run();
   await env.CORTANA_DB.prepare("DELETE FROM memory_spaces WHERE id = ?").bind(space.id).run();
   return json({ deleted: true, all: true });
 }
