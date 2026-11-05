@@ -63,3 +63,10 @@ This is a provider adapter, not user authentication or persistent memory. Before
 ## Local development
 
 Vite serves the browser application but does not execute Cloudflare Pages Functions. To test the real chat endpoint, deploy to Cloudflare Pages or run the project through the Cloudflare Pages local runtime with the required secrets. In plain Vite mode, the chat API will be unavailable and the UI will report that clearly.
+
+
+## v0.4.0 — Memory context integration
+
+The chat request may include an optional `memoryToken` bearer capability. When supplied, the server validates it against the D1 memory-space table and retrieves up to six relevant user-approved entries. Those entries are added to the server-owned prompt as untrusted context. The browser never sends memory text as a privileged system prompt.
+
+Memory is disabled by default. The user initializes a memory space, manually saves entries, and explicitly enables retrieval for chat sessions. Chat transcripts are not automatically persisted. See [Memory Core setup and privacy](MEMORY_CORE.md) for D1 setup and the capability-token security model.

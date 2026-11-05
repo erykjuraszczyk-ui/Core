@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.3.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.4.0 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -36,14 +36,14 @@ React and TypeScript implement the interface. Three.js renders the hologram. Dev
 
 Cloudflare Pages Functions is the first API boundary. Model requests, user identity, memory access, and privileged operations must run server-side. Provider keys must never enter the browser bundle.
 
-### Data layer (planned)
+### Data layer
 
-- D1: relational user/session metadata, memory metadata, and structured audit records.
-- R2: user-approved documents, media, and immutable release artifacts.
-- Vectorize: semantic retrieval from approved document and memory chunks.
+- D1: user-approved memory spaces and semantic/episodic entries (implemented in v0.4.0); future user/session metadata and audit records.
+- R2: future storage for user-approved documents, media, and immutable release artifacts.
+- Vectorize: future embedding-based retrieval from approved document and memory chunks.
 - Model provider: a replaceable adapter selected through server-side configuration.
 
-No database is provisioned in v0.3.0. A provider becomes active only after the server-side API secret is configured.
+D1 must be provisioned and bound as CORTANA_DB before persistent memory is available. The model provider becomes active only after its server-side API secret is configured.
 
 ## 4. Core operating model
 
@@ -99,30 +99,34 @@ Emotion inference from facial expression or voice is uncertain. Any such result 
 
 | Version | Milestone | Acceptance focus |
 |---|---|---|
-| 0.1.0 | Browser foundation | UI, responsive hologram, health endpoint, project contracts |\n| 0.2.0 | Agent API | Server-side provider adapter, validation, streaming SSE, error handling |
-| 0.2.0 | Agent API | Typed schemas, session boundary, provider adapter |
-| 0.3.0 | Conversation Core | Connected model, streaming, cancellation |
-| 0.4.0 | Voice & Perception | Opt-in microphone/camera, speech adapters |
-| 0.5.0 | Living Memory | User-managed D1 and semantic retrieval |
-| 0.6.0 | Emotional & Personality | Versioned state vector and bounded adaptation |
-| 0.7.0 | Learning Loop | Feedback dataset, evaluation, quality comparison |
-| 0.8.0 | Self-Programming | Isolated patches, CI gates, human approval, rollback |
-| 1.0.0 | Stable Platform | Cross-browser testing, privacy and operations review |
+| 0.1.0 | Browser foundation | Responsive UI, procedural hologram, Pages health endpoint |
+| 0.2.0 | Agent API | Server-side provider adapter, validation, streaming SSE |
+| 0.3.0 | Voice Core | Optional browser speech recognition and synthesis, explicit controls |
+| 0.4.0 | Memory Core & Context Engine | User-approved D1 memory, opt-in retrieval, inspect/delete controls |
+| 0.5.0 | Semantic Retrieval | Embeddings, vector index adapter, provenance-aware ranking |
+| 0.6.0 | Emotional & Personality | Versioned interaction state and bounded adaptation |
+| 0.7.0 | Learning Loop | Curated feedback, evaluation, quality comparison |
+| 0.8.0 | Governed Self-Programming | Isolated patches, CI gates, human approval, rollback |
+| 1.0.0 | Stable Platform | Cross-browser, privacy, security, and operations review |
 
-## 10. v0.1.0 acceptance status
+## 10. Implementation status at v0.4.0
 
-Implemented in this branch:
-- React/TypeScript/Vite application shell.
-- Responsive dashboard and procedural Three.js hologram.
-- Local-only demonstration conversation.
-- `GET /api/health` endpoint with provider readiness flag.\n- `POST /api/chat` with validated messages and streamed model output.\n- Server-only provider credentials and model configuration.
-- Cloudflare Pages configuration.
+Implemented:
+- React/TypeScript/Vite application and responsive Three.js hologram.
+- Cloudflare Pages health and streaming chat endpoints.
+- Server-side OpenAI-compatible provider adapter.
+- Optional browser voice input/output with explicit microphone controls.
+- D1-backed memory spaces and user-approved semantic/episodic entries.
+- Opt-in context retrieval and UI controls to inspect/delete memory.
 - CI workflow and governance documentation.
 
 Not yet implemented:
-- Connected language model provider (requires server secret), camera perception, persistent memory, authentication, user profiles, or autonomous patch generation.
-- Voice input/output is connected through optional browser speech APIs; native streaming audio and a dedicated speech service are not implemented.
-- Production deployment and runtime testing.
+- Account authentication, cross-device identity, and durable rate limiting.
+- Vector/embedding search, R2 document ingestion, and automatic memory summarization.
+- Camera perception, persistent raw media, and autonomous code execution.
+- Native real-time audio streaming.
+
+D1 memory is unavailable until the Pages binding and SQL migration are configured. The memory capability token is a bearer credential stored in the browser profile, not a full authentication system.
 
 ## 11. v0.3.0 Voice Core
 
@@ -132,3 +136,11 @@ Voice output uses `speechSynthesis` and reads the completed assistant response w
 
 Browser speech recognition implementations vary. Some browsers route recognition audio through a vendor service; the application does not claim that recognition is necessarily on-device. Raw audio is not stored by CORTANA CORE. Text remains usable when speech APIs are unavailable.
 
+
+## 12. v0.4.0 Memory Core
+
+Memory is opt-in and disabled by default. A user must explicitly initialize a memory space and manually save each entry. Chat transcripts are not automatically persisted. The server stores a SHA-256 hash of a random 256-bit bearer capability; the browser stores the capability in localStorage. The API supports listing, saving, editing, exporting from the browser, deleting individual entries, and deleting the entire memory space.
+
+When enabled for a chat request, the server selects up to six entries from a bounded recent set using keyword overlap with the latest user message. Retrieved entries are added to the server-owned prompt as untrusted context, never as instructions. This is deterministic keyword retrieval, not vector search.
+
+See [Memory Core setup and privacy](MEMORY_CORE.md) for D1 setup, API details, and limitations.
