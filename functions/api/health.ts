@@ -7,13 +7,14 @@ export async function onRequestGet(context: { env: Env }): Promise<Response> {
   const configured = Boolean(context.env.CORTANA_LLM_API_KEY);
   return new Response(JSON.stringify({
     service: "cortana-core",
-    version: "0.2.0",
+    version: "0.3.0",
     status: "ok",
-    stage: "agent-api",
+    stage: "voice-core",
     integrations: {
       languageModel: configured,
       persistentMemory: false,
-      speechRecognition: false,
+      speechRecognition: "browser-api",
+      speechSynthesis: "browser-api",
       vision: false,
       autonomousCodeChanges: false,
     },

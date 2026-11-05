@@ -1,6 +1,7 @@
 import { type FormEvent, useEffect, useRef, useState } from "react";
 import HologramScene from "./components/HologramScene";
 import { streamAgentReply, type AgentMessage } from "./lib/agent";
+import { createSpeechRecognition, speakText, stopSpeaking, type CortanaSpeechRecognition } from "./lib/voice";
 
 type Message = {
   id: number;
@@ -12,13 +13,14 @@ type Message = {
 const initialMessages: Message[] = [{
   id: 1,
   role: "cortana",
-  text: "Interfejs CORTANA CORE został uruchomiony. Jestem w trybie demonstracyjnym — model AI i pamięć nie zostały jeszcze podłączone.",
+  text: "CORTANA CORE v0.3.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała pozostaje wyłączona.",
   time: "SYSTEM",
 }];
 
 const modules = [
   { name: "Holographic Body", detail: "Renderer 3D", state: "ACTIVE" },
-  { name: "Sensory Input", detail: "Oczekiwanie na zgodę", state: "LOCKED" },
+  { name: "Sensory Input", detail: "Ręczne uruchomienie mikrofonu", state: "LOCKED" },
+  { name: "Voice Core", detail: "Speech Recognition + Synthesis", state: "BROWSER API" },
   { name: "Emotional Engine", detail: "Model stanów", state: "LOCAL MODEL" },
   { name: "Long-Term Memory", detail: "Magazyn niepodłączony", state: "OFFLINE" },
   { name: "Learning Loop", detail: "Zatwierdzony feedback", state: "OBSERVE" },
@@ -37,6 +39,11 @@ export default function App() {
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isSending, setIsSending] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [voiceOutput, setVoiceOutput] = useState(false);
+  const [voiceNotice, setVoiceNotice] = useState("GŁOS GOTOWY");
+  const recognitionRef = useRef<CortanaSpeechRecognition | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,6 +60,59 @@ export default function App() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
+
+  function startListening() {
+    const recognition = createSpeechRecognition();
+    if (!recognition) {
+      setVoiceNotice("BRAK OBSŁUGI ROZPOZNAWANIA MOWY");
+      return;
+    }
+    let finalTranscript = "";
+    recognition.onstart = () => {
+      setIsListening(true);
+      setVoiceNotice("NASŁUCH AKTYWNY · PL-PL");
+    };
+    recognition.onresult = (event) => {
+      let interim = "";
+      for (let index = event.resultIndex; index < event.results.length; index += 1) {
+        const result = event.results[index];
+        const transcript = result?.[0]?.transcript || "";
+        if (result?.isFinal) finalTranscript += transcript;
+        else interim += transcript;
+      }
+      setDraft((finalTranscript + interim).trim());
+    };
+    recognition.onerror = (event) => {
+      setVoiceNotice(event.error === "not-allowed" ? "BRAK ZGODY NA MIKROFON" : "BŁĄD MIKROFONU");
+      setIsListening(false);
+    };
+    recognition.onend = () => {
+      setIsListening(false);
+      setVoiceNotice(finalTranscript.trim() ? "TEKST ROZPOZNANY · NACIŚNIJ WYŚLIJ" : "GŁOS GOTOWY");
+      recognitionRef.current = null;
+    };
+    recognitionRef.current = recognition;
+    try {
+      recognition.start();
+    } catch {
+      setVoiceNotice("NIE MOŻNA URUCHOMIĆ MIKROFONU");
+      recognitionRef.current = null;
+    }
+  }
+
+  function stopListening() {
+    recognitionRef.current?.stop();
+    setIsListening(false);
+  }
+
+  function stopVoice() {
+    abortControllerRef.current?.abort();
+    stopSpeaking();
+    setIsSpeaking(false);
+    recognitionRef.current?.abort();
+    setIsListening(false);
+    setVoiceNotice("GŁOS ZATRZYMANY");
+  }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -76,15 +136,21 @@ export default function App() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
+    let assistantText = "";
     try {
       await streamAgentReply(history, {
         signal: controller.signal,
         onToken: (token) => {
+          assistantText += token;
           setMessages((current) => current.map((message) =>
             message.id === assistantId ? { ...message, text: message.text + token } : message
           ));
         },
       });
+      if (voiceOutput && assistantText) {
+        const started = speakText(assistantText, () => setIsSpeaking(false));
+        setIsSpeaking(started);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Nieznany błąd połączenia.";
       setMessages((current) => current.map((item) =>
@@ -105,7 +171,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.2.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.3.0</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
@@ -123,7 +189,7 @@ export default function App() {
             <button className={`primary-button ${sessionActive ? "is-active" : ""}`} onClick={() => setSessionActive((active) => !active)}>
               <span className="button-orb" />{sessionActive ? "ZAKOŃCZ SESJĘ" : "AKTYWUJ SESJĘ"}
             </button>
-            <span className="action-note">SERWEROWY MODEL AI · STREAMING SSE</span>
+            <span className="action-note">VOICE CORE · PL-PL · STREAMING SSE</span>
           </div>
         </div>
 
@@ -137,7 +203,7 @@ export default function App() {
         </div>
 
         <aside className="identity-panel">
-          <div className="panel-heading"><span className="eyebrow">SYSTEM IDENTITY</span><span className="panel-index">01 / 06</span></div>
+          <div className="panel-heading"><span className="eyebrow">SYSTEM IDENTITY</span><span className="panel-index">01 / 07</span></div>
           <div className="identity-title"><h2>CORTANA</h2><span className="identity-subtitle">Adaptive digital agent</span></div>
           <p className="identity-text">System rozwijany modułowo. Jego możliwości wynikają z podłączonych modeli, danych, uprawnień i przetestowanych komponentów.</p>
           <div className="identity-divider" />
@@ -154,7 +220,7 @@ export default function App() {
         <section className="modules-panel panel">
           <div className="section-heading">
             <div><p className="eyebrow">ARCHITECTURE / LIVE MAP</p><h2>Rdzeń systemu</h2></div>
-            <span className="panel-index">06 MODULES</span>
+            <span className="panel-index">07 MODULES</span>
           </div>
           <div className="module-list">
             {modules.map((module, index) => (
@@ -170,7 +236,7 @@ export default function App() {
         <section className="conversation-panel panel">
           <div className="section-heading">
             <div><p className="eyebrow">COMMUNICATION CHANNEL</p><h2>Interfejs rozmowy</h2></div>
-            <span className="channel-status"><i /> {isSending ? "STREAMING" : apiStatus === "online" ? "API READY" : "API CHECK"}</span>
+            <span className="channel-status"><i /> {isListening ? "LISTENING" : isSending ? "STREAMING" : apiStatus === "online" ? "API READY" : "API CHECK"}</span>
           </div>
           <div className="message-list" aria-live="polite">
             {messages.map((message) => (
@@ -181,12 +247,18 @@ export default function App() {
             ))}
             <div ref={messagesEndRef} />
           </div>
+          <div className="voice-toolbar" aria-label="Sterowanie głosem">
+            <button type="button" className={`voice-button ${isListening ? "voice-active" : ""}`} onClick={isListening ? stopListening : startListening} disabled={isSending && !isListening} aria-pressed={isListening}>{isListening ? "■ ZATRZYMAJ NASŁUCH" : "◉ MÓW DO CORTANY"}</button>
+            <button type="button" className={`voice-button ${voiceOutput ? "voice-selected" : ""}`} onClick={() => { setVoiceOutput((enabled) => !enabled); stopSpeaking(); setIsSpeaking(false); }} aria-pressed={voiceOutput}>GŁOS {voiceOutput ? "WŁ." : "WYŁ."}</button>
+            <button type="button" className="voice-button voice-stop" onClick={stopVoice} disabled={!isSending && !isListening && !isSpeaking}>STOP</button>
+          </div>
+          <div className="voice-notice" role="status">{voiceNotice} · ROZPOZNAWANIE WYKONUJE PRZEGLĄDARKA</div>
           <form className="composer" onSubmit={handleSubmit}>
             <label className="sr-only" htmlFor="message-input">Wiadomość do CORTANY</label>
             <input id="message-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Napisz do CORTANY..." maxLength={4000} />
             <button type="submit" aria-label="Wyślij wiadomość" disabled={!draft.trim() || isSending}><span>↗</span></button>
           </form>
-          <div className="composer-note">ROZMOWA PRZEZ SERWEROWY MODEL AI · PAMIĘĆ TRWAŁA WYŁĄCZONA</div>
+          <div className="composer-note">ROZMOWA AI · MIKROFON URUCHAMIASZ RĘCZNIE · PAMIĘĆ TRWAŁA WYŁĄCZONA</div>
         </section>
       </section>
 

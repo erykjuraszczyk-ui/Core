@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.2.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.3.0 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -43,7 +43,7 @@ Cloudflare Pages Functions is the first API boundary. Model requests, user ident
 - Vectorize: semantic retrieval from approved document and memory chunks.
 - Model provider: a replaceable adapter selected through server-side configuration.
 
-No database is provisioned in v0.2.0. A provider becomes active only after the server-side API secret is configured.
+No database is provisioned in v0.3.0. A provider becomes active only after the server-side API secret is configured.
 
 ## 4. Core operating model
 
@@ -120,5 +120,15 @@ Implemented in this branch:
 - CI workflow and governance documentation.
 
 Not yet implemented:
-- Connected language model, voice, camera perception, persistent memory, authentication, user profiles, or autonomous patch generation.
+- Connected language model provider (requires server secret), camera perception, persistent memory, authentication, user profiles, or autonomous patch generation.
+- Voice input/output is connected through optional browser speech APIs; native streaming audio and a dedicated speech service are not implemented.
 - Production deployment and runtime testing.
+
+## 11. v0.3.0 Voice Core
+
+Voice input is implemented as a progressive browser enhancement using `SpeechRecognition` / `webkitSpeechRecognition` when available. The recognition locale is `pl-PL`; interim text is displayed in the message composer and final text is sent only after the user explicitly presses Send. Microphone capture starts only after a direct user action and browser permission.
+
+Voice output uses `speechSynthesis` and reads the completed assistant response when enabled. The user can disable speech output or stop current speech. The stop control also aborts an active chat request.
+
+Browser speech recognition implementations vary. Some browsers route recognition audio through a vendor service; the application does not claim that recognition is necessarily on-device. Raw audio is not stored by CORTANA CORE. Text remains usable when speech APIs are unavailable.
+
