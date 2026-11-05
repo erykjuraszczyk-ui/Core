@@ -49,6 +49,7 @@ export default function App() {
   const [memoryEnabled, setMemoryEnabled] = useState(false);
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [memoryDraft, setMemoryDraft] = useState("");
+  const [memoryKind, setMemoryKind] = useState<"semantic" | "episode">("semantic");
   const [memoryNotice, setMemoryNotice] = useState("PAMIĘĆ WYŁĄCZONA");
 
   useEffect(() => {
@@ -91,7 +92,7 @@ export default function App() {
   async function saveMemoryEntry() {
     if (!memoryToken || !memoryDraft.trim()) return;
     try {
-      const entry = await saveMemory(memoryToken, memoryDraft.trim(), "semantic");
+      const entry = await saveMemory(memoryToken, memoryDraft.trim(), memoryKind);
       setMemories((current) => [entry, ...current]);
       setMemoryDraft("");
       setMemoryNotice("ZAPISANO ZATWIERDZONY WPIS");
@@ -109,6 +110,17 @@ export default function App() {
     } catch (error) {
       setMemoryNotice(error instanceof Error ? error.message : "Nie udało się usunąć wpisu.");
     }
+  }
+
+  function exportMemories() {
+    if (!memories.length) return;
+    const blob = new Blob([JSON.stringify({ exportedAt: new Date().toISOString(), entries: memories }, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "cortana-memory-export.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
   }
 
   async function eraseAllMemory() {
@@ -320,9 +332,11 @@ export default function App() {
             <div className="memory-toolbar">
               <button type="button" className="voice-button" onClick={enableMemory} disabled={memoryEnabled}>WŁĄCZ PAMIĘĆ</button>
               <button type="button" className="voice-button" onClick={() => { setMemoryEnabled(false); setMemoryNotice("PAMIĘĆ WYŁĄCZONA DLA ROZMOWY"); }} disabled={!memoryEnabled}>WYŁĄCZ</button>
+              <button type="button" className="voice-button" onClick={exportMemories} disabled={!memories.length}>EKSPORTUJ</button>
               <button type="button" className="voice-button voice-stop" onClick={eraseAllMemory} disabled={!memoryToken}>USUŃ WSZYSTKO</button>
             </div>
             {memoryEnabled && <div className="memory-editor">
+              <select value={memoryKind} onChange={(event) => setMemoryKind(event.target.value as "semantic" | "episode")} aria-label="Rodzaj pamięci"><option value="semantic">FAKT / PREFERENCJA</option><option value="episode">ZDARZENIE / EPIZOD</option></select>
               <textarea value={memoryDraft} onChange={(event) => setMemoryDraft(event.target.value)} maxLength={4000} placeholder="Wpisz informację, którą CORTANA ma zapamiętać. Zapis jest ręczny." />
               <button type="button" className="voice-button" onClick={saveMemoryEntry} disabled={!memoryDraft.trim()}>ZAPISZ PAMIĘĆ</button>
               <div className="memory-list">
