@@ -3,6 +3,8 @@ export type AgentMessage = {
   content: string;
 };
 
+type StreamContent = string | Array<{ type?: string; text?: string }> | undefined;
+
 type StreamHandlers = {
   onToken: (token: string) => void;
   onError?: (message: string) => void;
@@ -11,13 +13,13 @@ type StreamHandlers = {
 
 type StreamChunk = {
   choices?: Array<{
-    delta?: { content?: string | Array<{ type?: string; text?: string }> };
+    delta?: { content?: StreamContent };
     finish_reason?: string | null;
   }>;
   error?: { message?: string };
 };
 
-function extractText(content: StreamChunk["choices"] extends Array<infer T> ? T extends { delta?: infer D } ? D extends { content?: infer C } ? C : never : never : never): string {
+function extractText(content: StreamContent): string {
   if (typeof content === "string") return content;
   if (Array.isArray(content)) {
     return content.map((part) => typeof part.text === "string" ? part.text : "").join("");
