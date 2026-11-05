@@ -1,10 +1,10 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.3.0 — Voice Core & Real-Time Conversation**
+**CORTANA CORE v0.4.0 — Memory Core & Context Engine**
 
 CORTANA is a browser-first, multi-platform AI system project. This milestone adds a server-side, OpenAI-compatible streaming conversation API to the browser foundation.
 
-> This release is a visual and architectural foundation. A real model is used when the server-side provider secret is configured. Persistent memory, camera perception, and autonomous code deployment are not yet connected. Voice input/output uses browser speech APIs where supported. The interface identifies these capabilities as not connected.
+> This milestone adds opt-in, user-managed persistent memory on Cloudflare D1 and bounded context retrieval. The model provider still requires a server-side secret. Camera perception and autonomous code deployment are not connected. Voice uses browser speech APIs where supported.
 
 ## Goals
 
@@ -69,7 +69,7 @@ The repository includes `wrangler.toml`. Do not commit Cloudflare tokens, accoun
 
 The product concept follows the user's **CORTANA — Instrukcja Systemu Żywego v2.0**: sensory input, emotional state model, personality core, holographic body, learning loop, layered memory, and evolution journal. These are implemented as software modules and state models, not as claims of biological life or consciousness.
 
-See [Project Specification](docs/PROJECT_SPEC.md) and [Agent API](docs/AGENT_API.md).
+See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md), and [Memory Core setup and privacy](docs/MEMORY_CORE.md).
 
 ## Voice Core v0.3.0
 
@@ -80,3 +80,4 @@ See [Project Specification](docs/PROJECT_SPEC.md) and [Agent API](docs/AGENT_API
 - CORTANA CORE does not persist raw microphone audio. Recognition text becomes a normal chat message only after the user presses Send.
 - Voice is an optional enhancement; text chat remains available on unsupported browsers.
 
+\n## Memory Core v0.4.0\n\n- Opt-in memory; disabled by default and never populated from chat automatically.\n- Explicit user-approved semantic and episodic entries stored in Cloudflare D1.\n- Relevant entries are retrieved into the server-side chat context only while memory is enabled.\n- Users can inspect entries, delete individual entries, or erase the entire memory space.\n- A random bearer capability is stored in the browser profile; it is not a replacement for account authentication. Do not save highly sensitive information.\n- Retrieval uses bounded keyword matching. Embedding/vector search is not implemented in this milestone.\n\nSee [Memory Core setup and privacy](docs/MEMORY_CORE.md) before configuring a D1 binding.\n
