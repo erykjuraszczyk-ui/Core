@@ -120,7 +120,8 @@ Implemented in this branch:
 - CI workflow and governance documentation.
 
 Not yet implemented:
-- Connected language model, voice, camera perception, persistent memory, authentication, user profiles, or autonomous patch generation.
+- Connected language model provider (requires server secret), camera perception, persistent memory, authentication, user profiles, or autonomous patch generation.
+- Voice input/output is connected through optional browser speech APIs; native streaming audio and a dedicated speech service are not implemented.
 - Production deployment and runtime testing.
 
 ## 11. v0.3.0 Voice Core
