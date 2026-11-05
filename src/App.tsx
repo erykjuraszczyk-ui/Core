@@ -340,7 +340,7 @@ export default function App() {
               <textarea value={memoryDraft} onChange={(event) => setMemoryDraft(event.target.value)} maxLength={4000} placeholder="Wpisz informację, którą CORTANA ma zapamiętać. Zapis jest ręczny." />
               <button type="button" className="voice-button" onClick={saveMemoryEntry} disabled={!memoryDraft.trim()}>ZAPISZ PAMIĘĆ</button>
               <div className="memory-list">
-                {memories.slice(0, 5).map((entry) => <div className="memory-entry" key={entry.id}>
+                {memories.map((entry) => <div className="memory-entry" key={entry.id}>
                   <span>{entry.content}</span>
                   <button type="button" onClick={() => removeMemoryEntry(entry.id)} aria-label="Usuń wpis pamięci">×</button>
                 </div>)}
