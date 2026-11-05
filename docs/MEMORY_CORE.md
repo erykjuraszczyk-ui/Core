@@ -27,6 +27,7 @@ All routes are same-origin Pages Functions. JSON responses use `Cache-Control: n
 - `POST /api/memory` with `{"action":"initialize"}` creates a memory space and returns a 256-bit bearer capability once.
 - `GET /api/memory` with `Authorization: Bearer <token>` lists up to 100 entries.
 - `POST /api/memory` with bearer authorization and `{"action":"save","kind":"semantic","content":"...","tags":[]}` saves a user-approved entry.
+- `POST /api/memory` with bearer authorization and `{"action":"update","id":"...","kind":"episode","content":"..."}` corrects an existing entry.
 - `DELETE /api/memory?id=<entry-id>` deletes one entry.
 - `DELETE /api/memory` deletes the complete memory space.
 
