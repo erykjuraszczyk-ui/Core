@@ -94,6 +94,9 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
   if (typeof body.content !== "string" || !body.content.trim() || body.content.length > 4000) {
     return json({ error: "Treść pamięci musi mieć od 1 do 4000 znaków." }, 400);
   }
+  const count = await env.CORTANA_DB.prepare("SELECT COUNT(*) AS total FROM memory_entries WHERE space_id = ?")
+    .bind(space.id).first<{ total: number }>();
+  if ((count?.total || 0) >= 100) return json({ error: "Pamięć osiągnęła limit 100 wpisów. Usuń niepotrzebne wpisy przed dodaniem kolejnych." }, 409);
   const kind: MemoryKind = body.kind === "episode" ? "episode" : "semantic";
   const tags = Array.isArray(body.tags)
     ? body.tags.filter((tag): tag is string => typeof tag === "string").map((tag) => tag.trim().slice(0, 40)).filter(Boolean).slice(0, 10)
