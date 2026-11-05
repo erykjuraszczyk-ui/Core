@@ -40,6 +40,7 @@ export default function App() {
   const abortControllerRef = useRef<AbortController | null>(null);
   const [isSending, setIsSending] = useState(false);
   const [isListening, setIsListening] = useState(false);
+  const [isSpeaking, setIsSpeaking] = useState(false);
   const [voiceOutput, setVoiceOutput] = useState(false);
   const [voiceNotice, setVoiceNotice] = useState("GŁOS GOTOWY");
   const recognitionRef = useRef<CortanaSpeechRecognition | null>(null);
@@ -107,6 +108,7 @@ export default function App() {
   function stopVoice() {
     abortControllerRef.current?.abort();
     stopSpeaking();
+    setIsSpeaking(false);
     recognitionRef.current?.abort();
     setIsListening(false);
     setVoiceNotice("GŁOS ZATRZYMANY");
@@ -145,7 +147,10 @@ export default function App() {
           ));
         },
       });
-      if (voiceOutput && assistantText) speakText(assistantText);
+      if (voiceOutput && assistantText) {
+        const started = speakText(assistantText, () => setIsSpeaking(false));
+        setIsSpeaking(started);
+      }
     } catch (error) {
       const message = error instanceof Error ? error.message : "Nieznany błąd połączenia.";
       setMessages((current) => current.map((item) =>
@@ -244,8 +249,8 @@ export default function App() {
           </div>
           <div className="voice-toolbar" aria-label="Sterowanie głosem">
             <button type="button" className={`voice-button ${isListening ? "voice-active" : ""}`} onClick={isListening ? stopListening : startListening} disabled={isSending && !isListening} aria-pressed={isListening}>{isListening ? "■ ZATRZYMAJ NASŁUCH" : "◉ MÓW DO CORTANY"}</button>
-            <button type="button" className={`voice-button ${voiceOutput ? "voice-selected" : ""}`} onClick={() => { setVoiceOutput((enabled) => !enabled); stopSpeaking(); }} aria-pressed={voiceOutput}>GŁOS {voiceOutput ? "WŁ." : "WYŁ."}</button>
-            <button type="button" className="voice-button voice-stop" onClick={stopVoice} disabled={!isSending && !isListening}>STOP</button>
+            <button type="button" className={`voice-button ${voiceOutput ? "voice-selected" : ""}`} onClick={() => { setVoiceOutput((enabled) => !enabled); stopSpeaking(); setIsSpeaking(false); }} aria-pressed={voiceOutput}>GŁOS {voiceOutput ? "WŁ." : "WYŁ."}</button>
+            <button type="button" className="voice-button voice-stop" onClick={stopVoice} disabled={!isSending && !isListening && !isSpeaking}>STOP</button>
           </div>
           <div className="voice-notice" role="status">{voiceNotice} · ROZPOZNAWANIE WYKONUJE PRZEGLĄDARKA</div>
           <form className="composer" onSubmit={handleSubmit}>
