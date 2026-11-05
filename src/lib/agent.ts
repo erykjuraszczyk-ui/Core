@@ -9,6 +9,7 @@ type StreamHandlers = {
   onToken: (token: string) => void;
   onError?: (message: string) => void;
   signal?: AbortSignal;
+  memoryToken?: string;
 };
 
 type StreamChunk = {
@@ -34,7 +35,7 @@ export async function streamAgentReply(
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
-    body: JSON.stringify({ messages }),
+    body: JSON.stringify({ messages, ...(handlers.memoryToken ? { memoryToken: handlers.memoryToken } : {}) }),
     signal: handlers.signal,
   });
 
