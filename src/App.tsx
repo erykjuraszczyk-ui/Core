@@ -133,7 +133,8 @@ export default function App() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    let assistantText = "";\n    try {
+    let assistantText = "";
+    try {
       await streamAgentReply(history, {
         signal: controller.signal,
         onToken: (token) => {
@@ -142,7 +143,8 @@ export default function App() {
             message.id === assistantId ? { ...message, text: message.text + token } : message
           ));
         },
-      });\n      if (voiceOutput && assistantText) speakText(assistantText);
+      });
+      if (voiceOutput && assistantText) speakText(assistantText);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Nieznany błąd połączenia.";
       setMessages((current) => current.map((item) =>
