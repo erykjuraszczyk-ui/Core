@@ -3,7 +3,7 @@
 ## What is implemented
 
 - Cloudflare D1 relational storage for user-approved semantic and episodic memory entries.
-- A browser-generated memory capability is issued by the server; only its SHA-256 hash is stored in D1.
+- The server generates a random 256-bit memory capability; only its SHA-256 hash is stored in D1.
 - Memory is opt-in and disabled by default for each page session.
 - The user explicitly writes and saves each memory entry. Chat transcripts are not automatically persisted.
 - When memory is enabled, the chat endpoint retrieves up to six relevant entries using bounded keyword matching against the latest user message and adds them as untrusted context.
