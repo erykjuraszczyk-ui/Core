@@ -36,7 +36,7 @@ React and TypeScript implement the interface. Three.js renders the hologram. Dev
 
 Cloudflare Pages Functions is the first API boundary. Model requests, user identity, memory access, and privileged operations must run server-side. Provider keys must never enter the browser bundle.
 
-### Data layer (planned)
+### Data layer
 
 - D1: user-approved memory spaces and semantic/episodic entries (implemented in v0.4.0); future user/session metadata and audit records.
 - R2: future storage for user-approved documents, media, and immutable release artifacts.
