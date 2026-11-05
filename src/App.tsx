@@ -133,15 +133,15 @@ export default function App() {
     const controller = new AbortController();
     abortControllerRef.current = controller;
 
-    try {
+    let assistantText = "";\n    try {
       await streamAgentReply(history, {
         signal: controller.signal,
         onToken: (token) => {
-          setMessages((current) => current.map((message) =>
+          assistantText += token;\n          setMessages((current) => current.map((message) =>
             message.id === assistantId ? { ...message, text: message.text + token } : message
           ));
         },
-      });
+      });\n      if (voiceOutput && assistantText) speakText(assistantText);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Nieznany błąd połączenia.";
       setMessages((current) => current.map((item) =>
@@ -238,7 +238,12 @@ export default function App() {
             ))}
             <div ref={messagesEndRef} />
           </div>
-          <div className="voice-toolbar" aria-label="Sterowanie głosem">\n            <button type="button" className={`voice-button ${isListening ? "voice-active" : ""}`} onClick={isListening ? stopListening : startListening} aria-pressed={isListening}>{isListening ? "■ ZATRZYMAJ NASŁUCH" : "◉ MÓW DO CORTANY"}</button>\n            <button type="button" className={`voice-button ${voiceOutput ? "voice-selected" : ""}`} onClick={() => { setVoiceOutput((enabled) => !enabled); stopSpeaking(); }} aria-pressed={voiceOutput}>GŁOS {voiceOutput ? "WŁ." : "WYŁ."}</button>\n            <button type="button" className="voice-button voice-stop" onClick={stopVoice} disabled={!isSending && !isListening}>STOP</button>\n          </div>\n          <div className="voice-notice" role="status">{voiceNotice} · ROZPOZNAWANIE WYKONUJE PRZEGLĄDARKA</div>\n          <form className="composer" onSubmit={handleSubmit}>
+          <div className="voice-toolbar" aria-label="Sterowanie głosem">
+            <button type="button" className={`voice-button ${isListening ? "voice-active" : ""}`} onClick={isListening ? stopListening : startListening} aria-pressed={isListening}>{isListening ? "■ ZATRZYMAJ NASŁUCH" : "◉ MÓW DO CORTANY"}</button>
+            <button type="button" className={`voice-button ${voiceOutput ? "voice-selected" : ""}`} onClick={() => { setVoiceOutput((enabled) => !enabled); stopSpeaking(); }} aria-pressed={voiceOutput}>GŁOS {voiceOutput ? "WŁ." : "WYŁ."}</button>
+            <button type="button" className="voice-button voice-stop" onClick={stopVoice} disabled={!isSending && !isListening}>STOP</button>
+          </div>
+          <div className="voice-notice" role="status">{voiceNotice} · ROZPOZNAWANIE WYKONUJE PRZEGLĄDARKA</div>\n          <form className="composer" onSubmit={handleSubmit}>
             <label className="sr-only" htmlFor="message-input">Wiadomość do CORTANY</label>
             <input id="message-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Napisz do CORTANY..." maxLength={4000} />
             <button type="submit" aria-label="Wyślij wiadomość" disabled={!draft.trim() || isSending}><span>↗</span></button>
