@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import HologramScene from "./components/HologramScene";
 import { streamAgentReply, type AgentMessage } from "./lib/agent";
 import { createSpeechRecognition, speakText, stopSpeaking, type CortanaSpeechRecognition } from "./lib/voice";
+import { clearMemoryToken, deleteMemory, initializeMemory, listMemories, readMemoryToken, saveMemory, storeMemoryToken, type MemoryEntry } from "./lib/memory";
 
 type Message = {
   id: number;
@@ -44,6 +45,15 @@ export default function App() {
   const [voiceOutput, setVoiceOutput] = useState(false);
   const [voiceNotice, setVoiceNotice] = useState("GŁOS GOTOWY");
   const recognitionRef = useRef<CortanaSpeechRecognition | null>(null);
+  const [memoryToken, setMemoryToken] = useState<string | null>(null);
+  const [memoryEnabled, setMemoryEnabled] = useState(false);
+  const [memories, setMemories] = useState<MemoryEntry[]>([]);
+  const [memoryDraft, setMemoryDraft] = useState("");
+  const [memoryNotice, setMemoryNotice] = useState("PAMIĘĆ WYŁĄCZONA");
+
+  useEffect(() => {
+    setMemoryToken(readMemoryToken());
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -60,6 +70,60 @@ export default function App() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }, [messages]);
+
+  async function enableMemory() {
+    try {
+      let token = memoryToken;
+      if (!token) {
+        token = await initializeMemory();
+        storeMemoryToken(token);
+        setMemoryToken(token);
+      }
+      const entries = await listMemories(token);
+      setMemories(entries);
+      setMemoryEnabled(true);
+      setMemoryNotice(`PAMIĘĆ AKTYWNA · ${entries.length} WPISÓW`);
+    } catch (error) {
+      setMemoryNotice(error instanceof Error ? error.message : "Nie udało się uruchomić pamięci.");
+    }
+  }
+
+  async function saveMemoryEntry() {
+    if (!memoryToken || !memoryDraft.trim()) return;
+    try {
+      const entry = await saveMemory(memoryToken, memoryDraft.trim(), "semantic");
+      setMemories((current) => [entry, ...current]);
+      setMemoryDraft("");
+      setMemoryNotice("ZAPISANO ZATWIERDZONY WPIS");
+    } catch (error) {
+      setMemoryNotice(error instanceof Error ? error.message : "Nie udało się zapisać pamięci.");
+    }
+  }
+
+  async function removeMemoryEntry(id: string) {
+    if (!memoryToken) return;
+    try {
+      await deleteMemory(memoryToken, id);
+      setMemories((current) => current.filter((entry) => entry.id !== id));
+      setMemoryNotice("WPIS USUNIĘTY");
+    } catch (error) {
+      setMemoryNotice(error instanceof Error ? error.message : "Nie udało się usunąć wpisu.");
+    }
+  }
+
+  async function eraseAllMemory() {
+    if (!memoryToken || !window.confirm("Usunąć wszystkie zapisane wspomnienia CORTANY? Tej operacji nie można cofnąć.")) return;
+    try {
+      await deleteMemory(memoryToken);
+      clearMemoryToken();
+      setMemoryToken(null);
+      setMemoryEnabled(false);
+      setMemories([]);
+      setMemoryNotice("PAMIĘĆ USUNIĘTA");
+    } catch (error) {
+      setMemoryNotice(error instanceof Error ? error.message : "Nie udało się usunąć pamięci.");
+    }
+  }
 
   function startListening() {
     const recognition = createSpeechRecognition();
@@ -140,6 +204,7 @@ export default function App() {
     try {
       await streamAgentReply(history, {
         signal: controller.signal,
+        memoryToken: memoryEnabled ? memoryToken || undefined : undefined,
         onToken: (token) => {
           assistantText += token;
           setMessages((current) => current.map((message) =>
@@ -247,6 +312,28 @@ export default function App() {
             ))}
             <div ref={messagesEndRef} />
           </div>
+          <section className="memory-panel" aria-label="Pamięć CORTANY">
+            <div className="memory-heading">
+              <strong>MEMORY CORE</strong>
+              <span>{memoryEnabled ? `AKTYWNA · ${memories.length}` : "WYŁĄCZONA"}</span>
+            </div>
+            <div className="memory-toolbar">
+              <button type="button" className="voice-button" onClick={enableMemory} disabled={memoryEnabled}>WŁĄCZ PAMIĘĆ</button>
+              <button type="button" className="voice-button" onClick={() => { setMemoryEnabled(false); setMemoryNotice("PAMIĘĆ WYŁĄCZONA DLA ROZMOWY"); }} disabled={!memoryEnabled}>WYŁĄCZ</button>
+              <button type="button" className="voice-button voice-stop" onClick={eraseAllMemory} disabled={!memoryToken}>USUŃ WSZYSTKO</button>
+            </div>
+            {memoryEnabled && <div className="memory-editor">
+              <textarea value={memoryDraft} onChange={(event) => setMemoryDraft(event.target.value)} maxLength={4000} placeholder="Wpisz informację, którą CORTANA ma zapamiętać. Zapis jest ręczny." />
+              <button type="button" className="voice-button" onClick={saveMemoryEntry} disabled={!memoryDraft.trim()}>ZAPISZ PAMIĘĆ</button>
+              <div className="memory-list">
+                {memories.slice(0, 5).map((entry) => <div className="memory-entry" key={entry.id}>
+                  <span>{entry.content}</span>
+                  <button type="button" onClick={() => removeMemoryEntry(entry.id)} aria-label="Usuń wpis pamięci">×</button>
+                </div>)}
+              </div>
+            </div>}
+            <div className="memory-notice" role="status">{memoryNotice} · ZAPIS TYLKO RĘCZNY</div>
+          </section>
           <div className="voice-toolbar" aria-label="Sterowanie głosem">
             <button type="button" className={`voice-button ${isListening ? "voice-active" : ""}`} onClick={isListening ? stopListening : startListening} disabled={isSending && !isListening} aria-pressed={isListening}>{isListening ? "■ ZATRZYMAJ NASŁUCH" : "◉ MÓW DO CORTANY"}</button>
             <button type="button" className={`voice-button ${voiceOutput ? "voice-selected" : ""}`} onClick={() => { setVoiceOutput((enabled) => !enabled); stopSpeaking(); setIsSpeaking(false); }} aria-pressed={voiceOutput}>GŁOS {voiceOutput ? "WŁ." : "WYŁ."}</button>
