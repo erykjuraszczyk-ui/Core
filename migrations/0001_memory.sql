@@ -1,5 +1,3 @@
-PRAGMA foreign_keys = ON;
-
 CREATE TABLE IF NOT EXISTS memory_spaces (
   id TEXT PRIMARY KEY,
   token_hash TEXT NOT NULL UNIQUE,
