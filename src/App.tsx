@@ -247,7 +247,8 @@ export default function App() {
             <button type="button" className={`voice-button ${voiceOutput ? "voice-selected" : ""}`} onClick={() => { setVoiceOutput((enabled) => !enabled); stopSpeaking(); }} aria-pressed={voiceOutput}>GŁOS {voiceOutput ? "WŁ." : "WYŁ."}</button>
             <button type="button" className="voice-button voice-stop" onClick={stopVoice} disabled={!isSending && !isListening}>STOP</button>
           </div>
-          <div className="voice-notice" role="status">{voiceNotice} · ROZPOZNAWANIE WYKONUJE PRZEGLĄDARKA</div>\n          <form className="composer" onSubmit={handleSubmit}>
+          <div className="voice-notice" role="status">{voiceNotice} · ROZPOZNAWANIE WYKONUJE PRZEGLĄDARKA</div>
+          <form className="composer" onSubmit={handleSubmit}>
             <label className="sr-only" htmlFor="message-input">Wiadomość do CORTANY</label>
             <input id="message-input" value={draft} onChange={(event) => setDraft(event.target.value)} placeholder="Napisz do CORTANY..." maxLength={4000} />
             <button type="submit" aria-label="Wyślij wiadomość" disabled={!draft.trim() || isSending}><span>↗</span></button>
