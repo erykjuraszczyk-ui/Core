@@ -2,7 +2,7 @@ import { type FormEvent, useEffect, useRef, useState } from "react";
 import HologramScene from "./components/HologramScene";
 import { streamAgentReply, type AgentMessage } from "./lib/agent";
 import { createSpeechRecognition, speakText, stopSpeaking, type CortanaSpeechRecognition } from "./lib/voice";
-import { clearMemoryToken, deleteMemory, initializeMemory, listMemories, readMemoryToken, saveMemory, storeMemoryToken, type MemoryEntry } from "./lib/memory";
+import { clearMemoryToken, deleteMemory, initializeMemory, listMemories, readMemoryToken, saveMemory, storeMemoryToken, type MemoryEntry, updateMemory } from "./lib/memory";
 
 type Message = {
   id: number;
@@ -50,6 +50,7 @@ export default function App() {
   const [memories, setMemories] = useState<MemoryEntry[]>([]);
   const [memoryDraft, setMemoryDraft] = useState("");
   const [memoryKind, setMemoryKind] = useState<"semantic" | "episode">("semantic");
+  const [memoryEditingId, setMemoryEditingId] = useState<string | null>(null);
   const [memoryNotice, setMemoryNotice] = useState("PAMIĘĆ WYŁĄCZONA");
 
   useEffect(() => {
@@ -92,10 +93,17 @@ export default function App() {
   async function saveMemoryEntry() {
     if (!memoryToken || !memoryDraft.trim()) return;
     try {
-      const entry = await saveMemory(memoryToken, memoryDraft.trim(), memoryKind);
-      setMemories((current) => [entry, ...current]);
+      if (memoryEditingId) {
+        await updateMemory(memoryToken, memoryEditingId, memoryDraft.trim(), memoryKind);
+        setMemories((current) => current.map((entry) => entry.id === memoryEditingId ? { ...entry, content: memoryDraft.trim(), kind: memoryKind, updatedAt: new Date().toISOString() } : entry));
+        setMemoryNotice("ZAKTUALIZOWANO WPIS");
+      } else {
+        const entry = await saveMemory(memoryToken, memoryDraft.trim(), memoryKind);
+        setMemories((current) => [entry, ...current]);
+        setMemoryNotice("ZAPISANO ZATWIERDZONY WPIS");
+      }
       setMemoryDraft("");
-      setMemoryNotice("ZAPISANO ZATWIERDZONY WPIS");
+      setMemoryEditingId(null);
     } catch (error) {
       setMemoryNotice(error instanceof Error ? error.message : "Nie udało się zapisać pamięci.");
     }
@@ -338,11 +346,15 @@ export default function App() {
             {memoryEnabled && <div className="memory-editor">
               <select value={memoryKind} onChange={(event) => setMemoryKind(event.target.value as "semantic" | "episode")} aria-label="Rodzaj pamięci"><option value="semantic">FAKT / PREFERENCJA</option><option value="episode">ZDARZENIE / EPIZOD</option></select>
               <textarea value={memoryDraft} onChange={(event) => setMemoryDraft(event.target.value)} maxLength={4000} placeholder="Wpisz informację, którą CORTANA ma zapamiętać. Zapis jest ręczny." />
-              <button type="button" className="voice-button" onClick={saveMemoryEntry} disabled={!memoryDraft.trim()}>ZAPISZ PAMIĘĆ</button>
+              <button type="button" className="voice-button" onClick={saveMemoryEntry} disabled={!memoryDraft.trim()}>{memoryEditingId ? "ZAPISZ ZMIANY" : "ZAPISZ PAMIĘĆ"}</button>
+              {memoryEditingId && <button type="button" className="voice-button" onClick={() => { setMemoryEditingId(null); setMemoryDraft(""); }}>ANULUJ EDYCJĘ</button>}
               <div className="memory-list">
                 {memories.map((entry) => <div className="memory-entry" key={entry.id}>
                   <span>{entry.content}</span>
-                  <button type="button" onClick={() => removeMemoryEntry(entry.id)} aria-label="Usuń wpis pamięci">×</button>
+                  <div className="memory-entry-actions">
+                    <button type="button" onClick={() => { setMemoryEditingId(entry.id); setMemoryDraft(entry.content); setMemoryKind(entry.kind); }} aria-label="Edytuj wpis pamięci">✎</button>
+                    <button type="button" onClick={() => removeMemoryEntry(entry.id)} aria-label="Usuń wpis pamięci">×</button>
+                  </div>
                 </div>)}
               </div>
             </div>}
