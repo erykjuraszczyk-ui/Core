@@ -86,7 +86,7 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - Opt-in memory; disabled by default and never populated from chat automatically.
 - Explicit user-approved semantic and episodic entries stored in Cloudflare D1.
 - Relevant entries are retrieved into the server-side chat context only while memory is enabled.
-- Users can inspect entries, delete individual entries, or erase the entire memory space.
+- Users can inspect, edit, export, and delete individual entries, or erase the entire memory space.
 - A random bearer capability is stored in the browser profile; it is not a replacement for account authentication. Do not save highly sensitive information.
 - Retrieval uses bounded keyword matching. Embedding/vector search is not implemented in this milestone.
 
