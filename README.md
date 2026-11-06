@@ -1,6 +1,6 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.7.0 — Adaptive Learning & Feedback Engine**
+**CORTANA CORE v0.8.0 — Governed Self-Programming & Rollback Engine**
 
 CORTANA is a browser-first, multi-platform AI agent project. v0.7.0 adds explicit response ratings and a local, reviewable preference-adaptation loop on top of the v0.6.0 personality profile. Semantic memory from v0.5.0 remains available.
 
@@ -64,3 +64,13 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - Applying a recommendation requires an explicit user action; it updates the existing personality preference.
 - Users can dismiss a recommendation and clear the local feedback register.
 - This is preference adaptation, not model fine-tuning, autonomous code modification, or evidence of machine learning of model weights.
+
+
+## Governed Self-Programming & Rollback Engine (v0.8.0)
+
+- Users can create local change proposals with a title, target path, rationale, and test plan.
+- A deterministic metadata validator accepts only paths under `src/`, `functions/`, or `docs/`; it rejects protected paths and malformed proposal metadata.
+- State transitions are gated: proposed → validated → approved; proposals can also be rejected, and approval can be withdrawn.
+- Approval means permission to hand a proposal to a human implementation/review workflow. It does not execute code, edit files, create commits, or deploy.
+- The local proposal registry is capped at 50 records and can be cleared by the user.
+- Source-code diffs, sandbox execution, GitHub automation, and true commit-level rollback are not part of this release.
