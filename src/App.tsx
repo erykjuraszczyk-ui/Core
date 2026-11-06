@@ -6,6 +6,7 @@ import { clearMemoryToken, deleteMemory, initializeMemory, listMemories, readMem
 import { classifyInteraction, readPersonality, savePersonality, type CortanaMood, type PersonalityStyle } from "./lib/emotion";
 import { clearFeedback, getLearningInsight, readFeedback, saveFeedback, type FeedbackRecord, type FeedbackRating } from "./lib/learning";
 import { clearProposals, createProposal, readProposals, transitionProposal, validateProposal, type ChangeProposal } from "./lib/change-governance";
+import { clearCodeArtifacts, createCodeArtifact, readCodeArtifacts, saveCodeArtifact, type CodeArtifact } from "./lib/sandbox";
 
 type Message = {
   id: number;
@@ -18,7 +19,7 @@ type Message = {
 const initialMessages: Message[] = [{
   id: 1,
   role: "cortana",
-  text: "CORTANA CORE v0.8.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
+  text: "CORTANA CORE v0.9.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
   time: "SYSTEM",
 }];
 
@@ -63,10 +64,15 @@ export default function App() {
   const [proposals, setProposals] = useState<ChangeProposal[]>([]);
   const [proposalTitle, setProposalTitle] = useState("");
   const [proposalDescription, setProposalDescription] = useState("");
-  const [proposalTarget, setProposalTarget] = useState("src/");
+  const [proposalTarget, setProposalTarget] = useState("src/lib/new-module.ts");
+  const [artifacts, setArtifacts] = useState<CodeArtifact[]>([]);
+  const [artifactTitle, setArtifactTitle] = useState("");
+  const [artifactTarget, setArtifactTarget] = useState("src/lib/new-module.ts");
+  const [artifactSource, setArtifactSource] = useState("");
+  const [artifactTests, setArtifactTests] = useState("");
   const learningInsight = getLearningInsight(feedback);
 
-  useEffect(() => { setPersonality(readPersonality()); setFeedback(readFeedback()); setProposals(readProposals()); }, []);
+  useEffect(() => { setPersonality(readPersonality()); setFeedback(readFeedback()); setProposals(readProposals()); setArtifacts(readCodeArtifacts()); }, []);
   function changePersonality(value: PersonalityStyle) { setPersonality(value); savePersonality(value); }
   function rateResponse(messageId: number, rating: FeedbackRating, style: PersonalityStyle) {
     const next = saveFeedback({ id: crypto.randomUUID(), messageId, rating, style, createdAt: new Date().toISOString() });
@@ -76,7 +82,16 @@ export default function App() {
     event.preventDefault();
     if (!proposalTitle.trim() || !proposalDescription.trim() || !proposalTarget.trim()) return;
     setProposals(createProposal({ title: proposalTitle, description: proposalDescription, target: proposalTarget }));
-    setProposalTitle(""); setProposalDescription(""); setProposalTarget("src/");
+    setProposalTitle(""); setProposalDescription(""); setProposalTarget("src/lib/new-module.ts");
+  }
+  function submitCodeArtifact(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const artifact = createCodeArtifact({ title: artifactTitle, target: artifactTarget, source: artifactSource, testPlan: artifactTests });
+    setArtifacts(saveCodeArtifact(artifact));
+  }
+  function clearArtifacts() {
+    if (!window.confirm("Usunąć lokalne artefakty kodu?")) return;
+    clearCodeArtifacts(); setArtifacts([]);
   }
   function runProposalValidation(id: string) { setProposals(validateProposal(id)); }
   function updateProposalStatus(id: string, status: "approved" | "rejected" | "rolled_back") {
@@ -300,7 +315,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.8.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.9.0</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
@@ -398,6 +413,30 @@ export default function App() {
           ))}
         </div>
         <div className="learning-footer"><span>LOKALNY REJESTR · LIMIT 50 · BEZ WYKONYWANIA KODU</span><button type="button" className="voice-button voice-stop" onClick={resetProposals} disabled={!proposals.length}>WYCZYŚĆ REJESTR</button></div>
+      </section>
+
+      <section className="sandbox-panel panel" aria-label="Sandboxed Code Generation and Automated Testing">
+        <div className="section-heading"><div><p className="eyebrow">SANDBOXED CODE GENERATION & AUTOMATED TESTING</p><h2>Laboratorium kodu</h2></div><span className="channel-status"><i /> PREFLIGHT ONLY</span></div>
+        <p className="governance-intro">Wklej wygenerowany lub przygotowany kod i plan testów. Preflight wykonuje deterministyczne kontrole metadanych oraz skan wzorców ryzyka. To nie jest wykonanie kodu ani pełny sandbox runtime — żaden kod nie zostaje uruchomiony.</p>
+        <form className="governance-form" onSubmit={submitCodeArtifact}>
+          <label>Nazwa artefaktu<input value={artifactTitle} onChange={(event) => setArtifactTitle(event.target.value)} minLength={5} maxLength={120} required placeholder="Moduł obsługi zdarzeń" /></label>
+          <label>Docelowa ścieżka<input value={artifactTarget} onChange={(event) => setArtifactTarget(event.target.value)} required /></label>
+          <label>Źródło kodu<textarea className="sandbox-code" value={artifactSource} onChange={(event) => setArtifactSource(event.target.value)} maxLength={20000} required placeholder="Wklej kod do statycznej kontroli (maks. 20 000 znaków)." /></label>
+          <label>Plan testów<textarea value={artifactTests} onChange={(event) => setArtifactTests(event.target.value)} minLength={20} maxLength={2000} required placeholder="Opisz przypadki testowe, oczekiwane wyniki i sposób weryfikacji." /></label>
+          <button type="submit" className="voice-button" disabled={!artifactTitle.trim() || !artifactSource.trim() || artifactTests.trim().length < 20}>URUCHOM PREFLIGHT</button>
+        </form>
+        <div className="governance-list">
+          {artifacts.length === 0 ? <p className="learning-hint">Brak artefaktów. Zapis lokalny w tej przeglądarce.</p> : artifacts.slice().reverse().map((artifact) => (
+            <article className="governance-item" key={artifact.id}>
+              <div className="governance-item-head"><strong>{artifact.title}</strong><span className={`governance-status ${artifact.status === "checks_passed" ? "status-validated" : "status-rejected"}`}>{artifact.status.toUpperCase()}</span></div>
+              <code>{artifact.target}</code>
+              <p>{artifact.checks.filter((check) => check.passed).length}/{artifact.checks.length} kontroli zaliczonych · {artifact.source.length} znaków kodu</p>
+              <ul className="sandbox-checks">{artifact.checks.map((check) => <li key={check.id} className={check.passed ? "check-pass" : "check-fail"}>{check.passed ? "PASS" : "BLOCK"} · {check.label}: {check.detail}</li>)}</ul>
+              <details><summary>Podgląd źródła i planu testów</summary><pre>{artifact.source}</pre><p>{artifact.testPlan}</p></details>
+            </article>
+          ))}
+        </div>
+        <div className="learning-footer"><span>LOKALNE ARTEFAKTY · LIMIT 25 · BRAK WYKONYWANIA KODU</span><button type="button" className="voice-button voice-stop" onClick={clearArtifacts} disabled={!artifacts.length}>WYCZYŚĆ ARTEFAKTY</button></div>
       </section>
 
       <section className="lower-grid">
