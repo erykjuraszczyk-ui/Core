@@ -1,8 +1,8 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.6.0 — Emotional & Personality Core**
+**CORTANA CORE v0.7.0 — Adaptive Learning & Feedback Engine**
 
-CORTANA is a browser-first, multi-platform AI agent project. v0.6.0 adds a local, user-configurable personality profile and lightweight interaction-state cues. Semantic memory from v0.5.0 remains available.
+CORTANA is a browser-first, multi-platform AI agent project. v0.7.0 adds explicit response ratings and a local, reviewable preference-adaptation loop on top of the v0.6.0 personality profile. Semantic memory from v0.5.0 remains available.
 
 > Memory remains opt-in and manually managed. D1 is authoritative; vector search is an optional index. If embeddings or Vectorize are unavailable, bounded keyword retrieval remains available.
 
@@ -53,3 +53,14 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - The selected style is stored locally in the browser; it is sent as a validated enum and never grants additional permissions.
 - Hologram presentation responds to the current interaction cue.
 - No emotion inference from camera, voice biometrics, or hidden behavioral profiling.
+
+
+## Adaptive Learning & Feedback Engine (v0.7.0)
+
+- Users can rate each completed assistant response as useful or needing improvement.
+- Feedback is stored locally in the browser (up to 200 records); no transcript or feedback is sent to the model provider.
+- The engine summarizes explicit ratings by the response personality style.
+- A style recommendation appears only after at least three positive ratings for that style.
+- Applying a recommendation requires an explicit user action; it updates the existing personality preference.
+- Users can dismiss a recommendation and clear the local feedback register.
+- This is preference adaptation, not model fine-tuning, autonomous code modification, or evidence of machine learning of model weights.
