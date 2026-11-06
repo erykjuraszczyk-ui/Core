@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.6.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.7.0 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -99,3 +99,14 @@ Software state and retrieval behavior are not evidence of subjective experience 
 - The selected personality is stored in browser localStorage; it is not part of long-term memory and does not grant tool permissions.
 - The hologram receives the cue as a visual presentation state.
 - No facial analysis, voice emotion inference, psychological profiling, or autonomous personality rewriting is implemented.
+
+
+## 9. v0.7.0 Adaptive Learning & Feedback Engine
+
+- Every completed assistant response can receive an explicit positive or negative rating.
+- Feedback records are stored in browser localStorage, capped at 200, and can be cleared by the user.
+- Records contain response ID, rating, personality style used, and timestamp; they do not store message text.
+- The evaluator counts ratings and proposes a personality-style preference only after at least three positive ratings for the same style.
+- The user must explicitly approve a proposed style change. Dismissal does not change settings.
+- Feedback is not transmitted to the chat API and does not fine-tune model weights.
+- This release does not introduce autonomous code generation, self-modification, or production deployment.
