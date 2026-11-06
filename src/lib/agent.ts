@@ -10,6 +10,8 @@ type StreamHandlers = {
   onError?: (message: string) => void;
   signal?: AbortSignal;
   memoryToken?: string;
+  personality?: "balanced" | "analytical" | "warm" | "concise";
+  mood?: "neutral" | "curious" | "supportive" | "focused" | "positive" | "calm";
 };
 
 type StreamChunk = {
@@ -35,7 +37,7 @@ export async function streamAgentReply(
   const response = await fetch("/api/chat", {
     method: "POST",
     headers: { "Content-Type": "application/json", "Accept": "text/event-stream" },
-    body: JSON.stringify({ messages, ...(handlers.memoryToken ? { memoryToken: handlers.memoryToken } : {}) }),
+    body: JSON.stringify({ messages, ...(handlers.memoryToken ? { memoryToken: handlers.memoryToken } : {}), ...(handlers.personality ? { personality: handlers.personality } : {}), ...(handlers.mood ? { mood: handlers.mood } : {}) }),
     signal: handlers.signal,
   });
 

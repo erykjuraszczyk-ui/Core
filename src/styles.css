@@ -169,3 +169,16 @@ a { color: inherit; text-decoration: none; }
 
 .memory-entry-actions { display:flex; gap:5px; flex-shrink:0; }
 .memory-entry-actions button { cursor:pointer; }
+
+
+.personality-panel { position:relative; z-index:1; margin:0 0 18px; padding:20px 22px; }
+.personality-controls { display:grid; grid-template-columns:minmax(130px,180px) minmax(180px,260px); align-items:center; gap:10px 14px; padding-top:14px; }
+.personality-controls label { color:#8bb6d0; font:9px var(--mono); letter-spacing:.06em; }
+.personality-controls select { min-height:34px; padding:0 10px; border:1px solid rgba(92,177,224,.25); border-radius:3px; color:#d8edf7; background:#07172a; font:10px var(--mono); }
+.personality-controls p { grid-column:1/-1; margin:0; color:#7186a0; font-size:10px; line-height:1.6; }
+.hologram-canvas.mood-curious { filter:hue-rotate(18deg) saturate(1.15); }
+.hologram-canvas.mood-supportive { filter:hue-rotate(48deg) saturate(.9); }
+.hologram-canvas.mood-focused { filter:hue-rotate(-12deg) saturate(1.2); }
+.hologram-canvas.mood-positive { filter:hue-rotate(75deg) saturate(1.2); }
+.hologram-canvas.mood-calm { filter:saturate(.7) brightness(1.05); }
+@media(max-width:600px) { .personality-panel { padding:17px 15px; } .personality-controls { grid-template-columns:1fr; } .personality-controls p { grid-column:auto; } }
