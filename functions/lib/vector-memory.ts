@@ -20,13 +20,13 @@ type EmbeddingResponse = { data?: Array<{ embedding?: number[] }> };
 
 export async function createEmbedding(text: string, env: EmbeddingEnv): Promise<number[] | null> {
   if (!env.CORTANA_LLM_API_KEY) return null;
-  const base = (env.CORTANA_LLM_BASE_URL || "https://api.openai.com/v1").replace(/\\/+$/, "");
+  const base = (env.CORTANA_LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
   let endpoint: string;
   try {
     const url = new URL(base);
     const local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
     if (url.protocol !== "https:" && !(local && url.protocol === "http:")) return null;
-    endpoint = `${url.toString().replace(/\\/+$/, "")}/embeddings`;
+    endpoint = `${url.toString().replace(/\/+$/, "")}/embeddings`;
   } catch { return null; }
 
   try {
@@ -58,7 +58,7 @@ export async function upsertMemoryVector(
   spaceId: string,
 ): Promise<boolean> {
   if (!index) return false;
-  const vector = await createEmbedding(`${entry.content}\\nTags: ${entry.tags.join(", ")}\\nType: ${entry.kind}`, env);
+  const vector = await createEmbedding(`${entry.content}\nTags: ${entry.tags.join(", ")}\nType: ${entry.kind}`, env);
   if (!vector) return false;
   try {
     await index.upsert([{
