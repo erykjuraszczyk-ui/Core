@@ -29,13 +29,8 @@ export interface D1Database {
 
 type MemorySpace = { id: string; token_hash: string };
 type MemoryRow = {
-  id: string;
-  kind: MemoryKind;
-  content: string;
-  tags_json: string;
-  source: string;
-  created_at: string;
-  updated_at: string;
+  id: string; kind: MemoryKind; content: string; tags_json: string;
+  source: string; created_at: string; updated_at: string;
 };
 
 export function createMemoryToken(): string {
@@ -63,27 +58,20 @@ export function mapMemoryRow(row: MemoryRow): MemoryEntry {
     if (Array.isArray(parsed)) tags = parsed.filter((tag): tag is string => typeof tag === "string").slice(0, 10);
   } catch { /* malformed legacy metadata is ignored */ }
   return {
-    id: row.id,
-    kind: row.kind,
-    content: row.content,
-    tags,
-    source: row.source,
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
+    id: row.id, kind: row.kind, content: row.content, tags, source: row.source,
+    createdAt: row.created_at, updatedAt: row.updated_at,
   };
 }
 
 export async function retrieveMemoryContext(
-  db: D1Database,
-  spaceId: string,
-  query: string,
+  db: D1Database, spaceId: string, query: string,
 ): Promise<MemoryEntry[]> {
   const result = await db.prepare(
     "SELECT id, kind, content, tags_json, source, created_at, updated_at FROM memory_entries WHERE space_id = ? ORDER BY updated_at DESC LIMIT 30",
   ).bind(spaceId).all<MemoryRow>();
 
   const rows = (result.results || []).map(mapMemoryRow);
-  const terms = [...new Set((query.toLowerCase().match(/[\p{L}\p{N}]{3,}/gu) || []).filter((term) => !STOP_WORDS.has(term)))];
+  const terms = [...new Set((query.toLowerCase().match(/[\\p{L}\\p{N}]{3,}/gu) || []).filter((term) => !STOP_WORDS.has(term)))];
   const ranked = rows.map((entry, index) => {
     const haystack = (entry.content + " " + entry.tags.join(" ")).toLowerCase();
     const score = terms.reduce((sum, term) => sum + (haystack.includes(term) ? 1 : 0), 0);
