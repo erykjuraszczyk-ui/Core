@@ -1,6 +1,6 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.9.0 — Sandboxed Code Generation & Automated Testing**
+**CORTANA CORE v0.9.1 — Automated Preflight Test Gates**
 
 CORTANA is a browser-first, multi-platform AI agent project. v0.7.0 adds explicit response ratings and a local, reviewable preference-adaptation loop on top of the v0.6.0 personality profile. Semantic memory from v0.5.0 remains available.
 
@@ -84,3 +84,11 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - A passing preflight means only that the configured static checks passed. It is not proof of correctness or security.
 - Generated source is never evaluated, imported, executed, committed, or deployed by this release. No real OS/container sandbox or automated unit-test runner is connected yet.
 - Human review and approval remain mandatory before any implementation workflow.
+
+
+## Automated Preflight Test Gates (v0.9.1)
+
+- Added Vitest unit tests for the v0.9.0 static preflight validator.
+- Added a GitHub Actions pull-request workflow that installs dependencies, runs unit tests, and runs the production build/typecheck.
+- The workflow uses read-only repository permissions and does not execute submitted artifacts; it tests the trusted validator implementation only.
+- No actual untrusted-code execution or OS/container sandbox is introduced by this release.
