@@ -38,12 +38,12 @@ function validOrigin(request: Request): boolean {
 }
 
 function getEndpoint(env: Env): string | null {
-  const base = (env.CORTANA_LLM_BASE_URL || "https://api.openai.com/v1").replace(/\\/+$/, "");
+  const base = (env.CORTANA_LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
   try {
     const url = new URL(base);
     const local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
     if (url.protocol !== "https:" && !(local && url.protocol === "http:")) return null;
-    return `${url.toString().replace(/\\/+$/, "")}/chat/completions`;
+    return `${url.toString().replace(/\/+$/, "")}/chat/completions`;
   } catch { return null; }
 }
 
@@ -95,7 +95,7 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
     const latestUserMessage = validated.messages[validated.messages.length - 1]?.content || "";
     const vectorMatches = await retrieveVectorMemoryContext(env.CORTANA_DB, env.CORTANA_VECTORIZE, env, space.id, latestUserMessage);
     const memories = vectorMatches ?? await retrieveMemoryContext(env.CORTANA_DB, space.id, latestUserMessage);
-    if (memories.length) memoryContext = memories.map((entry, index) => `[${index + 1}] (${entry.kind}) ${entry.content}`).join("\\n").slice(0, 7000);
+    if (memories.length) memoryContext = memories.map((entry, index) => `[${index + 1}] (${entry.kind}) ${entry.content}`).join("\n").slice(0, 7000);
   }
 
   const endpoint = getEndpoint(env);
