@@ -4,18 +4,20 @@ import { streamAgentReply, type AgentMessage } from "./lib/agent";
 import { createSpeechRecognition, speakText, stopSpeaking, type CortanaSpeechRecognition } from "./lib/voice";
 import { clearMemoryToken, deleteMemory, initializeMemory, listMemories, readMemoryToken, saveMemory, storeMemoryToken, type MemoryEntry, updateMemory } from "./lib/memory";
 import { classifyInteraction, readPersonality, savePersonality, type CortanaMood, type PersonalityStyle } from "./lib/emotion";
+import { clearFeedback, getLearningInsight, readFeedback, saveFeedback, type FeedbackRecord, type FeedbackRating } from "./lib/learning";
 
 type Message = {
   id: number;
   role: "user" | "cortana";
   text: string;
   time: string;
+  feedbackStyle?: PersonalityStyle;
 };
 
 const initialMessages: Message[] = [{
   id: 1,
   role: "cortana",
-  text: "CORTANA CORE v0.6.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
+  text: "CORTANA CORE v0.7.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
   time: "SYSTEM",
 }];
 
@@ -55,9 +57,22 @@ export default function App() {
   const [memoryNotice, setMemoryNotice] = useState("PAMIĘĆ WYŁĄCZONA");
   const [personality, setPersonality] = useState<PersonalityStyle>("balanced");
   const [mood, setMood] = useState<CortanaMood>("neutral");
+  const [feedback, setFeedback] = useState<FeedbackRecord[]>([]);
+  const [dismissedSuggestion, setDismissedSuggestion] = useState<PersonalityStyle | null>(null);
+  const learningInsight = getLearningInsight(feedback);
 
-  useEffect(() => { setPersonality(readPersonality()); }, []);
+  useEffect(() => { setPersonality(readPersonality()); setFeedback(readFeedback()); }, []);
   function changePersonality(value: PersonalityStyle) { setPersonality(value); savePersonality(value); }
+  function rateResponse(messageId: number, rating: FeedbackRating, style: PersonalityStyle) {
+    const next = saveFeedback({ id: crypto.randomUUID(), messageId, rating, style, createdAt: new Date().toISOString() });
+    setFeedback(next);
+  }
+  function resetLearningFeedback() {
+    if (!window.confirm("Usunąć lokalny rejestr ocen odpowiedzi?")) return;
+    clearFeedback();
+    setFeedback([]);
+    setDismissedSuggestion(null);
+  }
 
   useEffect(() => {
     setMemoryToken(readMemoryToken());
@@ -220,7 +235,7 @@ export default function App() {
     setMessages((current) => [
       ...current,
       { id: now, role: "user", text, time: formatTime() },
-      { id: assistantId, role: "cortana", text: "", time: "AI · STREAM" },
+      { id: assistantId, role: "cortana", text: "", time: "AI · STREAM", feedbackStyle: personality },
     ]);
     setDraft("");
     setIsSending(true);
@@ -265,7 +280,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.6.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.7.0</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
@@ -319,6 +334,22 @@ export default function App() {
           </select>
           <p>Stan jest lokalnym sygnałem interakcji, nie diagnozą emocji. Możesz zmienić styl w dowolnym momencie.</p>
         </div>
+      </section>
+
+      <section className="learning-panel panel" aria-label="Adaptive Learning and Feedback Engine">
+        <div className="section-heading"><div><p className="eyebrow">ADAPTIVE LEARNING & FEEDBACK ENGINE</p><h2>Ocena jakości odpowiedzi</h2></div><span className="channel-status"><i /> LOCAL · USER CONTROLLED</span></div>
+        <div className="learning-stats">
+          <div><strong>{learningInsight.total}</strong><span>OCENY</span></div>
+          <div><strong>{learningInsight.positive}</strong><span>POZYTYWNE</span></div>
+          <div><strong>{learningInsight.negative}</strong><span>DO POPRAWY</span></div>
+        </div>
+        {learningInsight.recommendedStyle && learningInsight.recommendedStyle !== personality && dismissedSuggestion !== learningInsight.recommendedStyle ? (
+          <div className="learning-suggestion">
+            <p>Na podstawie co najmniej 3 pozytywnych ocen stylu <strong>{learningInsight.recommendedStyle}</strong> CORTANA proponuje zmianę stylu odpowiedzi.</p>
+            <div><button type="button" className="voice-button" onClick={() => { changePersonality(learningInsight.recommendedStyle!); setDismissedSuggestion(null); }}>ZATWIERDŹ ZMIANĘ</button><button type="button" className="voice-button" onClick={() => setDismissedSuggestion(learningInsight.recommendedStyle)}>ODRZUĆ</button></div>
+          </div>
+        ) : <p className="learning-hint">Oceń odpowiedzi przyciskiem + lub −. Propozycja pojawi się po zebraniu minimum 3 pozytywnych ocen dla jednego stylu.</p>}
+        <div className="learning-footer"><span>DANE ZAPISYWANE LOKALNIE · MAKS. 200 OCEN</span><button type="button" className="voice-button voice-stop" onClick={resetLearningFeedback} disabled={!feedback.length}>WYCZYŚĆ OCENY</button></div>
       </section>
 
       <section className="lower-grid">
