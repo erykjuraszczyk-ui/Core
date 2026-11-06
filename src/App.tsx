@@ -256,6 +256,7 @@ export default function App() {
           ));
         },
       });
+      setMessages((current) => current.map((message) => message.id === assistantId ? { ...message, time: formatTime() } : message));
       if (voiceOutput && assistantText) {
         const started = speakText(assistantText, () => setIsSpeaking(false));
         setIsSpeaking(started);
@@ -379,7 +380,7 @@ export default function App() {
               <article className={`message message-${message.role}`} key={message.id}>
                 <div className="message-meta"><strong>{message.role === "user" ? "TY" : "CORTANA"}</strong><span>{message.time}</span></div>
                 <p>{message.text}</p>
-                {message.role === "cortana" && message.text.trim() && message.feedbackStyle && message.time !== "SYSTEM" && message.time !== "ERROR" && (
+                {message.role === "cortana" && message.text.trim() && message.feedbackStyle && message.time !== "SYSTEM" && message.time !== "ERROR" && message.time !== "AI · STREAM" && (
                   <div className="response-feedback" aria-label="Oceń odpowiedź CORTANY">
                     <span>PRZYDATNOŚĆ ODPOWIEDZI</span>
                     <button type="button" aria-label="Przydatna odpowiedź" aria-pressed={feedback.some((item) => item.messageId === message.id && item.rating === "positive")} onClick={() => rateResponse(message.id, "positive", message.feedbackStyle!)}>+</button>
