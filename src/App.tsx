@@ -3,6 +3,7 @@ import HologramScene from "./components/HologramScene";
 import { streamAgentReply, type AgentMessage } from "./lib/agent";
 import { createSpeechRecognition, speakText, stopSpeaking, type CortanaSpeechRecognition } from "./lib/voice";
 import { clearMemoryToken, deleteMemory, initializeMemory, listMemories, readMemoryToken, saveMemory, storeMemoryToken, type MemoryEntry, updateMemory } from "./lib/memory";
+import { classifyInteraction, readPersonality, savePersonality, type CortanaMood, type PersonalityStyle } from "./lib/emotion";
 
 type Message = {
   id: number;
@@ -14,7 +15,7 @@ type Message = {
 const initialMessages: Message[] = [{
   id: 1,
   role: "cortana",
-  text: "CORTANA CORE v0.4.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
+  text: "CORTANA CORE v0.6.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
   time: "SYSTEM",
 }];
 
@@ -52,6 +53,11 @@ export default function App() {
   const [memoryKind, setMemoryKind] = useState<"semantic" | "episode">("semantic");
   const [memoryEditingId, setMemoryEditingId] = useState<string | null>(null);
   const [memoryNotice, setMemoryNotice] = useState("PAMIĘĆ WYŁĄCZONA");
+  const [personality, setPersonality] = useState<PersonalityStyle>("balanced");
+  const [mood, setMood] = useState<CortanaMood>("neutral");
+
+  useEffect(() => { setPersonality(readPersonality()); }, []);
+  function changePersonality(value: PersonalityStyle) { setPersonality(value); savePersonality(value); }
 
   useEffect(() => {
     setMemoryToken(readMemoryToken());
@@ -203,6 +209,7 @@ export default function App() {
     const text = draft.trim();
     if (!text || isSending) return;
 
+    setMood(classifyInteraction(text));
     const now = Date.now();
     const history: AgentMessage[] = [
       ...messages.filter((message) => message.role !== "cortana" || message.time !== "SYSTEM")
@@ -225,6 +232,8 @@ export default function App() {
       await streamAgentReply(history, {
         signal: controller.signal,
         memoryToken: memoryEnabled ? memoryToken || undefined : undefined,
+        personality,
+        mood,
         onToken: (token) => {
           assistantText += token;
           setMessages((current) => current.map((message) =>
@@ -256,7 +265,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.4.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.6.0</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
@@ -282,7 +291,7 @@ export default function App() {
           <div className="stage-corner corner-tl" /><div className="stage-corner corner-tr" />
           <div className="stage-corner corner-bl" /><div className="stage-corner corner-br" />
           <div className="stage-label stage-label-top"><span>FIG. 01</span><span>HOLOGRAPHIC BODY</span></div>
-          <HologramScene />
+          <HologramScene mood={mood} />
           <div className="stage-core-caption"><span className="caption-line" /><span>CORTANA / CORE ENTITY</span><span className="caption-line" /></div>
           <div className="stage-label stage-label-bottom"><span>RENDER: WEBGL</span><span>SYNC: LOCAL</span></div>
         </div>
@@ -299,6 +308,17 @@ export default function App() {
           </div>
           <div className="identity-footer"><span className="signal-bars"><i /><i /><i /><i /><i /></span><span>CORE INTEGRITY NOMINAL</span></div>
         </aside>
+      </section>
+
+      <section className="personality-panel panel" aria-label="Emotional and Personality Core">
+        <div className="section-heading"><div><p className="eyebrow">EMOTIONAL & PERSONALITY CORE</p><h2>Stan interakcji</h2></div><span className="channel-status"><i /> {mood.toUpperCase()}</span></div>
+        <div className="personality-controls">
+          <label htmlFor="personality-style">Styl osobowości</label>
+          <select id="personality-style" value={personality} onChange={(event) => changePersonality(event.target.value as PersonalityStyle)}>
+            <option value="balanced">Zrównoważony</option><option value="analytical">Analityczny</option><option value="warm">Wspierający</option><option value="concise">Zwięzły</option>
+          </select>
+          <p>Stan jest lokalnym sygnałem interakcji, nie diagnozą emocji. Możesz zmienić styl w dowolnym momencie.</p>
+        </div>
       </section>
 
       <section className="lower-grid">
