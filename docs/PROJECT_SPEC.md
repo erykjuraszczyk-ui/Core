@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.8.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.9.0 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -64,6 +64,7 @@ The memory bearer token remains a capability, not a full account-authentication 
 | 0.6.0 | Emotional and personality state model |
 | 0.7.0 | Curated feedback and evaluation loop |
 | 0.8.0 | Governed self-programming with approval and rollback |
+| 0.9.0 | Code artifact preflight, static risk checks, and test-plan capture |
 | 1.0.0 | Stable cross-platform platform |
 
 ## 7. Implementation status at v0.5.0
@@ -122,3 +123,13 @@ Software state and retrieval behavior are not evidence of subjective experience 
 - No source file is edited by this engine; no generated code is executed; no commit or deployment is created.
 - The v0.8.0 rollback action withdraws proposal approval only. It does not revert a Git commit or restore deployed code.
 - A future release may add isolated patch generation, test execution in an ephemeral sandbox, signed artifacts, human review, and commit-level rollback.
+
+
+## 11. v0.9.0 Sandboxed Code Generation & Automated Testing
+
+- The browser provides a bounded code-artifact intake form: title, target path, source text, and a human-authored test plan.
+- Static preflight checks enforce the existing source roots (src/, functions/, docs/), reject protected path patterns, cap source size at 20,000 characters, require a test plan, and scan for selected high-risk APIs.
+- Results are stored locally, capped at 25 artifacts, and remain inspectable and deletable by the user.
+- Passing checks are a preliminary static gate only. Pattern scans can produce false positives and false negatives; they do not parse or prove program behavior.
+- This release does not execute untrusted code. A true sandbox runner (ephemeral container/VM, no secrets, deny-by-default network, CPU/memory/time limits, read-only base image) and automated unit-test execution are not yet connected. The UI explicitly discloses this limitation.
+- No source write, Git commit, PR merge, or deployment occurs from the artifact workspace. Any later execution service must return logs and a diff for human review before a separately authorized implementation step.
