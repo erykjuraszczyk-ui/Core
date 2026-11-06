@@ -1,12 +1,14 @@
 import { findMemorySpace, retrieveMemoryContext, type D1Database } from "../lib/memory-store";
+import { retrieveVectorMemoryContext, type VectorizeIndex } from "../lib/vector-memory";
 
 type ChatMessage = { role: "user" | "assistant"; content: string };
-
 type Env = {
   CORTANA_LLM_API_KEY?: string;
   CORTANA_LLM_MODEL?: string;
   CORTANA_LLM_BASE_URL?: string;
+  CORTANA_EMBEDDING_MODEL?: string;
   CORTANA_DB?: D1Database;
+  CORTANA_VECTORIZE?: VectorizeIndex;
 };
 
 const MAX_MESSAGES = 20;
@@ -24,76 +26,49 @@ const SYSTEM_PROMPT = [
 function json(data: unknown, status = 200): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      "Content-Type": "application/json; charset=utf-8",
-      "Cache-Control": "no-store",
-      "X-Content-Type-Options": "nosniff",
-    },
+    headers: { "Content-Type": "application/json; charset=utf-8", "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" },
   });
 }
 
 function validOrigin(request: Request): boolean {
   const origin = request.headers.get("Origin");
   if (!origin) return true;
-  try {
-    return new URL(origin).origin === new URL(request.url).origin;
-  } catch {
-    return false;
-  }
+  try { return new URL(origin).origin === new URL(request.url).origin; }
+  catch { return false; }
 }
 
 function getEndpoint(env: Env): string | null {
-  const base = (env.CORTANA_LLM_BASE_URL || "https://api.openai.com/v1").replace(/\/+$/, "");
+  const base = (env.CORTANA_LLM_BASE_URL || "https://api.openai.com/v1").replace(/\\/+$/, "");
   try {
     const url = new URL(base);
     const local = url.hostname === "localhost" || url.hostname === "127.0.0.1";
     if (url.protocol !== "https:" && !(local && url.protocol === "http:")) return null;
-    return `${url.toString().replace(/\/+$/, "")}/chat/completions`;
-  } catch {
-    return null;
-  }
+    return `${url.toString().replace(/\\/+$/, "")}/chat/completions`;
+  } catch { return null; }
 }
 
 function validateMessages(value: unknown): { messages?: ChatMessage[]; error?: string } {
-  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_MESSAGES) {
-    return { error: `Podaj od 1 do ${MAX_MESSAGES} wiadomości.` };
-  }
-
+  if (!Array.isArray(value) || value.length < 1 || value.length > MAX_MESSAGES) return { error: `Podaj od 1 do ${MAX_MESSAGES} wiadomości.` };
   const messages: ChatMessage[] = [];
   let total = 0;
-
   for (const item of value) {
     if (!item || typeof item !== "object") return { error: "Nieprawidłowy format wiadomości." };
     const candidate = item as Record<string, unknown>;
-    if (candidate.role !== "user" && candidate.role !== "assistant") {
-      return { error: "Dozwolone role wiadomości: user i assistant." };
-    }
-    if (typeof candidate.content !== "string" || !candidate.content.trim()) {
-      return { error: "Treść wiadomości nie może być pusta." };
-    }
-    if (candidate.content.length > MAX_MESSAGE_CHARS) {
-      return { error: `Jedna wiadomość może mieć maksymalnie ${MAX_MESSAGE_CHARS} znaków.` };
-    }
+    if (candidate.role !== "user" && candidate.role !== "assistant") return { error: "Dozwolone role wiadomości: user i assistant." };
+    if (typeof candidate.content !== "string" || !candidate.content.trim()) return { error: "Treść wiadomości nie może być pusta." };
+    if (candidate.content.length > MAX_MESSAGE_CHARS) return { error: `Jedna wiadomość może mieć maksymalnie ${MAX_MESSAGE_CHARS} znaków.` };
     total += candidate.content.length;
     messages.push({ role: candidate.role, content: candidate.content.trim() });
   }
-
   if (total > MAX_TOTAL_CHARS) return { error: "Historia rozmowy jest zbyt długa. Rozpocznij nową sesję." };
-  if (messages[messages.length - 1]?.role !== "user") {
-    return { error: "Ostatnia wiadomość musi pochodzić od użytkownika." };
-  }
-
+  if (messages[messages.length - 1]?.role !== "user") return { error: "Ostatnia wiadomość musi pochodzić od użytkownika." };
   return { messages };
 }
 
 export async function onRequestPost(context: { request: Request; env: Env }): Promise<Response> {
   const { request, env } = context;
-
   if (!validOrigin(request)) return json({ error: "Niedozwolone źródło żądania." }, 403);
-  if (!request.headers.get("Content-Type")?.toLowerCase().includes("application/json")) {
-    return json({ error: "Wymagany jest Content-Type: application/json." }, 415);
-  }
-
+  if (!request.headers.get("Content-Type")?.toLowerCase().includes("application/json")) return json({ error: "Wymagany jest Content-Type: application/json." }, 415);
   const declaredLength = Number(request.headers.get("Content-Length") || 0);
   if (declaredLength > 24000) return json({ error: "Żądanie jest zbyt duże." }, 413);
 
@@ -102,20 +77,15 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
     const raw = await request.text();
     if (raw.length > 24000) return json({ error: "Żądanie jest zbyt duże." }, 413);
     payload = JSON.parse(raw);
-  } catch {
-    return json({ error: "Nieprawidłowy JSON." }, 400);
-  }
+  } catch { return json({ error: "Nieprawidłowy JSON." }, 400); }
 
   const body = payload as { messages?: unknown; memoryToken?: unknown };
   const validated = validateMessages(body?.messages);
   if (!validated.messages) return json({ error: validated.error }, 400);
-
-  if (!env.CORTANA_LLM_API_KEY) {
-    return json({
-      error: "Silnik AI nie jest jeszcze skonfigurowany. Dodaj CORTANA_LLM_API_KEY jako sekret po stronie serwera.",
-      code: "MODEL_NOT_CONFIGURED",
-    }, 503);
-  }
+  if (!env.CORTANA_LLM_API_KEY) return json({
+    error: "Silnik AI nie jest jeszcze skonfigurowany. Dodaj CORTANA_LLM_API_KEY jako sekret po stronie serwera.",
+    code: "MODEL_NOT_CONFIGURED",
+  }, 503);
 
   let memoryContext = "";
   if (typeof body.memoryToken === "string" && body.memoryToken.length > 0) {
@@ -123,24 +93,18 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
     const space = await findMemorySpace(env.CORTANA_DB, body.memoryToken);
     if (!space) return json({ error: "Token pamięci jest nieprawidłowy. Wyłącz pamięć lub skonfiguruj ją ponownie." }, 401);
     const latestUserMessage = validated.messages[validated.messages.length - 1]?.content || "";
-    const memories = await retrieveMemoryContext(env.CORTANA_DB, space.id, latestUserMessage);
-    if (memories.length) {
-      memoryContext = memories.map((entry, index) => `[${index + 1}] (${entry.kind}) ${entry.content}`).join("\n").slice(0, 7000);
-    }
+    const vectorMatches = await retrieveVectorMemoryContext(env.CORTANA_DB, env.CORTANA_VECTORIZE, env, space.id, latestUserMessage);
+    const memories = vectorMatches ?? await retrieveMemoryContext(env.CORTANA_DB, space.id, latestUserMessage);
+    if (memories.length) memoryContext = memories.map((entry, index) => `[${index + 1}] (${entry.kind}) ${entry.content}`).join("\\n").slice(0, 7000);
   }
 
   const endpoint = getEndpoint(env);
   if (!endpoint) return json({ error: "Nieprawidłowa konfiguracja adresu dostawcy modelu." }, 500);
-
   let upstream: Response;
   try {
     upstream = await fetch(endpoint, {
       method: "POST",
-      headers: {
-        "Authorization": `Bearer ${env.CORTANA_LLM_API_KEY}`,
-        "Content-Type": "application/json",
-        "Accept": "text/event-stream",
-      },
+      headers: { Authorization: `Bearer ${env.CORTANA_LLM_API_KEY}`, "Content-Type": "application/json", Accept: "text/event-stream" },
       body: JSON.stringify({
         model: env.CORTANA_LLM_MODEL || "gpt-4o-mini",
         stream: true,
@@ -152,26 +116,16 @@ export async function onRequestPost(context: { request: Request; env: Env }): Pr
       }),
       signal: request.signal,
     });
-  } catch {
-    return json({ error: "Nie udało się połączyć z dostawcą modelu. Spróbuj ponownie." }, 502);
-  }
+  } catch { return json({ error: "Nie udało się połączyć z dostawcą modelu. Spróbuj ponownie." }, 502); }
 
   if (!upstream.ok || !upstream.body) {
     const status = upstream.status;
-    if (status === 401 || status === 403) {
-      return json({ error: "Dostawca odrzucił poświadczenia. Sprawdź sekret API po stronie serwera." }, 502);
-    }
+    if (status === 401 || status === 403) return json({ error: "Dostawca odrzucił poświadczenia. Sprawdź sekret API po stronie serwera." }, 502);
     if (status === 429) return json({ error: "Dostawca modelu ograniczył liczbę żądań. Spróbuj później." }, 429);
     return json({ error: "Dostawca modelu zwrócił błąd. Sprawdź konfigurację i spróbuj ponownie." }, 502);
   }
-
   return new Response(upstream.body, {
     status: 200,
-    headers: {
-      "Content-Type": "text/event-stream; charset=utf-8",
-      "Cache-Control": "no-cache, no-transform",
-      "X-Accel-Buffering": "no",
-      "X-Content-Type-Options": "nosniff",
-    },
+    headers: { "Content-Type": "text/event-stream; charset=utf-8", "Cache-Control": "no-cache, no-transform", "X-Accel-Buffering": "no", "X-Content-Type-Options": "nosniff" },
   });
 }
