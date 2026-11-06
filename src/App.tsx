@@ -379,6 +379,13 @@ export default function App() {
               <article className={`message message-${message.role}`} key={message.id}>
                 <div className="message-meta"><strong>{message.role === "user" ? "TY" : "CORTANA"}</strong><span>{message.time}</span></div>
                 <p>{message.text}</p>
+                {message.role === "cortana" && message.text.trim() && message.feedbackStyle && message.time !== "SYSTEM" && message.time !== "ERROR" && (
+                  <div className="response-feedback" aria-label="Oceń odpowiedź CORTANY">
+                    <span>PRZYDATNOŚĆ ODPOWIEDZI</span>
+                    <button type="button" aria-label="Przydatna odpowiedź" aria-pressed={feedback.some((item) => item.messageId === message.id && item.rating === "positive")} onClick={() => rateResponse(message.id, "positive", message.feedbackStyle!)}>+</button>
+                    <button type="button" aria-label="Odpowiedź do poprawy" aria-pressed={feedback.some((item) => item.messageId === message.id && item.rating === "negative")} onClick={() => rateResponse(message.id, "negative", message.feedbackStyle!)}>−</button>
+                  </div>
+                )}
               </article>
             ))}
             <div ref={messagesEndRef} />
