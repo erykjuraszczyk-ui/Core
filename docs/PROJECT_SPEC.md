@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.5.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.6.0 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -88,3 +88,14 @@ Not implemented:
 - Native real-time audio streaming.
 
 Software state and retrieval behavior are not evidence of subjective experience or consciousness.
+
+
+## 8. v0.6.0 Emotional & Personality Core
+
+- Personality profile is a user-selected enum: balanced, analytical, warm, concise.
+- Interaction cues are neutral, curious, supportive, focused, positive, and calm.
+- A local keyword heuristic selects a cue from the current message. It is a presentation hint, not a claim about the user's actual emotional state.
+- The server validates both values against fixed allowlists before adding communication guidance to the model context.
+- The selected personality is stored in browser localStorage; it is not part of long-term memory and does not grant tool permissions.
+- The hologram receives the cue as a visual presentation state.
+- No facial analysis, voice emotion inference, psychological profiling, or autonomous personality rewriting is implemented.
