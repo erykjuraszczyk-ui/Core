@@ -5,6 +5,7 @@ import { createSpeechRecognition, speakText, stopSpeaking, type CortanaSpeechRec
 import { clearMemoryToken, deleteMemory, initializeMemory, listMemories, readMemoryToken, saveMemory, storeMemoryToken, type MemoryEntry, updateMemory } from "./lib/memory";
 import { classifyInteraction, readPersonality, savePersonality, type CortanaMood, type PersonalityStyle } from "./lib/emotion";
 import { clearFeedback, getLearningInsight, readFeedback, saveFeedback, type FeedbackRecord, type FeedbackRating } from "./lib/learning";
+import { clearProposals, createProposal, readProposals, transitionProposal, validateProposal, type ChangeProposal } from "./lib/change-governance";
 
 type Message = {
   id: number;
@@ -17,7 +18,7 @@ type Message = {
 const initialMessages: Message[] = [{
   id: 1,
   role: "cortana",
-  text: "CORTANA CORE v0.7.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
+  text: "CORTANA CORE v0.8.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
   time: "SYSTEM",
 }];
 
@@ -59,13 +60,31 @@ export default function App() {
   const [mood, setMood] = useState<CortanaMood>("neutral");
   const [feedback, setFeedback] = useState<FeedbackRecord[]>([]);
   const [dismissedSuggestion, setDismissedSuggestion] = useState<PersonalityStyle | null>(null);
+  const [proposals, setProposals] = useState<ChangeProposal[]>([]);
+  const [proposalTitle, setProposalTitle] = useState("");
+  const [proposalDescription, setProposalDescription] = useState("");
+  const [proposalTarget, setProposalTarget] = useState("src/");
   const learningInsight = getLearningInsight(feedback);
 
-  useEffect(() => { setPersonality(readPersonality()); setFeedback(readFeedback()); }, []);
+  useEffect(() => { setPersonality(readPersonality()); setFeedback(readFeedback()); setProposals(readProposals()); }, []);
   function changePersonality(value: PersonalityStyle) { setPersonality(value); savePersonality(value); }
   function rateResponse(messageId: number, rating: FeedbackRating, style: PersonalityStyle) {
     const next = saveFeedback({ id: crypto.randomUUID(), messageId, rating, style, createdAt: new Date().toISOString() });
     setFeedback(next);
+  }
+  function submitChangeProposal(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (!proposalTitle.trim() || !proposalDescription.trim() || !proposalTarget.trim()) return;
+    setProposals(createProposal({ title: proposalTitle, description: proposalDescription, target: proposalTarget }));
+    setProposalTitle(""); setProposalDescription(""); setProposalTarget("src/");
+  }
+  function runProposalValidation(id: string) { setProposals(validateProposal(id)); }
+  function updateProposalStatus(id: string, status: "approved" | "rejected" | "rolled_back") {
+    setProposals(transitionProposal(id, status));
+  }
+  function resetProposals() {
+    if (!window.confirm("Usunąć lokalny rejestr propozycji zmian?")) return;
+    clearProposals(); setProposals([]);
   }
   function resetLearningFeedback() {
     if (!window.confirm("Usunąć lokalny rejestr ocen odpowiedzi?")) return;
@@ -281,7 +300,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.7.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.8.0</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
@@ -351,6 +370,34 @@ export default function App() {
           </div>
         ) : <p className="learning-hint">Oceń odpowiedzi przyciskiem + lub −. Propozycja pojawi się po zebraniu minimum 3 pozytywnych ocen dla jednego stylu.</p>}
         <div className="learning-footer"><span>DANE ZAPISYWANE LOKALNIE · MAKS. 200 OCEN</span><button type="button" className="voice-button voice-stop" onClick={resetLearningFeedback} disabled={!feedback.length}>WYCZYŚĆ OCENY</button></div>
+      </section>
+
+      <section className="governance-panel panel" aria-label="Governed Self-Programming Engine">
+        <div className="section-heading"><div><p className="eyebrow">GOVERNED SELF-PROGRAMMING & ROLLBACK</p><h2>Rejestr zmian systemowych</h2></div><span className="channel-status"><i /> APPROVAL REQUIRED</span></div>
+        <p className="governance-intro">CORTANA może przygotować propozycję zmiany. Walidacja sprawdza metadane i ścieżkę, ale nie wykonuje kodu. Zatwierdzenie oznacza zgodę na przekazanie do implementacji i przeglądu — nie wdrożenie.</p>
+        <form className="governance-form" onSubmit={submitChangeProposal}>
+          <label>Tytuł propozycji<input value={proposalTitle} onChange={(event) => setProposalTitle(event.target.value)} maxLength={120} minLength={5} required placeholder="Np. Usprawnienie obsługi pamięci" /></label>
+          <label>Docelowa ścieżka<input value={proposalTarget} onChange={(event) => setProposalTarget(event.target.value)} required placeholder="src/lib/module.ts" /></label>
+          <label>Uzasadnienie i plan zmiany<textarea value={proposalDescription} onChange={(event) => setProposalDescription(event.target.value)} minLength={20} maxLength={2000} required placeholder="Opisz problem, proponowane rozwiązanie, ryzyko i sposób testowania." /></label>
+          <button type="submit" className="voice-button" disabled={!proposalTitle.trim() || !proposalDescription.trim() || !proposalTarget.trim()}>DODAJ PROPOZYCJĘ</button>
+        </form>
+        <div className="governance-list">
+          {proposals.length === 0 ? <p className="learning-hint">Brak propozycji. Rejestr jest lokalny dla tej przeglądarki.</p> : proposals.slice().reverse().map((item) => (
+            <article className="governance-item" key={item.id}>
+              <div className="governance-item-head"><strong>{item.title}</strong><span className={`governance-status status-${item.status}`}>{item.status.toUpperCase()}</span></div>
+              <code>{item.target}</code>
+              <p>{item.description}</p>
+              {item.validationMessage && <small>{item.validationMessage}</small>}
+              <div className="governance-actions">
+                {item.status === "proposed" && <button type="button" className="voice-button" onClick={() => runProposalValidation(item.id)}>WALIDUJ</button>}
+                {item.status === "validated" && <><button type="button" className="voice-button" onClick={() => updateProposalStatus(item.id, "approved")}>ZATWIERDŹ DO IMPLEMENTACJI</button><button type="button" className="voice-button voice-stop" onClick={() => updateProposalStatus(item.id, "rejected")}>ODRZUĆ</button></>}
+                {item.status === "approved" && <button type="button" className="voice-button voice-stop" onClick={() => updateProposalStatus(item.id, "rolled_back")}>COFNIJ ZGODĘ</button>}
+                {(item.status === "rejected" || item.status === "rolled_back") && <span className="learning-hint">Propozycja zamknięta</span>}
+              </div>
+            </article>
+          ))}
+        </div>
+        <div className="learning-footer"><span>LOKALNY REJESTR · LIMIT 50 · BEZ WYKONYWANIA KODU</span><button type="button" className="voice-button voice-stop" onClick={resetProposals} disabled={!proposals.length}>WYCZYŚĆ REJESTR</button></div>
       </section>
 
       <section className="lower-grid">
