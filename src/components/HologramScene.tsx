@@ -1,7 +1,7 @@
 import { useEffect, useRef } from "react";
 import * as THREE from "three";
 
-export default function HologramScene() {
+export default function HologramScene({ mood = "neutral" }: { mood?: string }) {
   const hostRef = useRef<HTMLDivElement | null>(null);
 
   useEffect(() => {
@@ -149,7 +149,7 @@ export default function HologramScene() {
   }, []);
 
   return (
-    <div ref={hostRef} className="hologram-canvas" role="img" aria-label="Animowany hologram CORTANY z turkusowym rdzeniem i pierścieniami.">
+    <div ref={hostRef} className={`hologram-canvas mood-${mood}`} role="img" aria-label="Animowany hologram CORTANY z turkusowym rdzeniem i pierścieniami.">
       <div className="render-fallback"><span className="fallback-orb" /><span>HOLOGRAM 3D WYMAGA WEBGL</span></div>
     </div>
   );
