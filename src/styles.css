@@ -199,3 +199,22 @@ a { color: inherit; text-decoration: none; }
 .response-feedback button { width: 27px; height: 25px; border: 1px solid var(--line); border-radius: 4px; color: #9bcfe4; background: rgba(50,130,170,.08); }
 .response-feedback button[aria-pressed="true"] { border-color: var(--cyan); color: var(--cyan); background: rgba(84,232,255,.14); }
 @media (max-width: 650px) { .learning-panel { padding: 18px 14px; } .learning-stats { gap: 20px; } .learning-footer { align-items: flex-start; } }
+
+
+/* Governed Self-Programming & Rollback Engine */
+.governance-panel { position:relative; z-index:1; margin:0 0 26px; padding:22px 24px; border:1px solid var(--line); background:linear-gradient(145deg,rgba(12,22,42,.72),rgba(8,14,28,.52)); }
+.governance-intro { max-width:900px; color:#91a8c2; font-size:11px; line-height:1.8; }
+.governance-form { display:grid; gap:12px; margin:18px 0; }
+.governance-form label { display:grid; gap:7px; color:#91a8c2; font:9px var(--mono); letter-spacing:.07em; }
+.governance-form input,.governance-form textarea { width:100%; border:1px solid var(--line); border-radius:4px; padding:10px 12px; color:#eaf5ff; background:rgba(4,12,25,.65); font:11px Inter,system-ui,sans-serif; }
+.governance-form textarea { min-height:82px; resize:vertical; line-height:1.6; }
+.governance-list { display:grid; gap:10px; }
+.governance-item { padding:13px; border:1px solid var(--line); background:rgba(4,12,25,.42); }
+.governance-item-head { display:flex; flex-wrap:wrap; justify-content:space-between; gap:10px; color:#dceeff; font-size:12px; }
+.governance-item code { display:inline-block; margin-top:8px; color:#7acfe4; font-size:10px; }
+.governance-item p { color:#9aadc3; font-size:11px; line-height:1.7; }
+.governance-item small { color:#d0b982; font-size:10px; line-height:1.6; }
+.governance-status { font:8px var(--mono); letter-spacing:.08em; color:#91a8c2; }
+.status-approved { color:#74d8ae; } .status-rejected,.status-rolled_back { color:#e6a0a8; } .status-validated { color:#7ed9ec; }
+.governance-actions { display:flex; flex-wrap:wrap; gap:8px; margin-top:10px; }
+@media(max-width:650px) { .governance-panel { padding:18px 14px; } }
