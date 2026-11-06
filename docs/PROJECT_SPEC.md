@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.7.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.8.0 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -110,3 +110,15 @@ Software state and retrieval behavior are not evidence of subjective experience 
 - The user must explicitly approve a proposed style change. Dismissal does not change settings.
 - Feedback is not transmitted to the chat API and does not fine-tune model weights.
 - This release does not introduce autonomous code generation, self-modification, or production deployment.
+
+
+## 10. v0.8.0 Governed Self-Programming & Rollback Engine
+
+- The UI supports user-authored change proposals with title, target path, rationale, and test plan.
+- Proposal metadata is stored locally, capped at 50 records, and can be cleared.
+- Deterministic validation checks required field lengths and restricts target paths to `src/`, `functions/`, or `docs/`; protected directories and secret-file paths are rejected.
+- Allowed state transitions are proposed → validated → approved, proposed/validated → rejected, and approved → rolled_back (withdrawal of approval).
+- Approval is not execution authorization. It records human permission to hand a proposal to a separate implementation and review workflow.
+- No source file is edited by this engine; no generated code is executed; no commit or deployment is created.
+- The v0.8.0 rollback action withdraws proposal approval only. It does not revert a Git commit or restore deployed code.
+- A future release may add isolated patch generation, test execution in an ephemeral sandbox, signed artifacts, human review, and commit-level rollback.
