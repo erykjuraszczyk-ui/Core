@@ -1,6 +1,6 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.8.0 — Governed Self-Programming & Rollback Engine**
+**CORTANA CORE v0.9.0 — Sandboxed Code Generation & Automated Testing**
 
 CORTANA is a browser-first, multi-platform AI agent project. v0.7.0 adds explicit response ratings and a local, reviewable preference-adaptation loop on top of the v0.6.0 personality profile. Semantic memory from v0.5.0 remains available.
 
@@ -74,3 +74,13 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - Approval means permission to hand a proposal to a human implementation/review workflow. It does not execute code, edit files, create commits, or deploy.
 - The local proposal registry is capped at 50 records and can be cleared by the user.
 - Source-code diffs, sandbox execution, GitHub automation, and true commit-level rollback are not part of this release.
+
+
+## Sandboxed Code Generation & Automated Testing (v0.9.0)
+
+- Local code-artifact workspace accepts a title, allowlisted target path, source text (maximum 20,000 characters), and a required test plan.
+- Deterministic preflight checks validate metadata, path boundaries, text format, test-plan presence, and selected risky source patterns (dynamic evaluation, process/filesystem/child-process access, and direct network APIs).
+- Each artifact stores an inspectable check report and source preview in browser localStorage (maximum 25 artifacts); users can clear the registry.
+- A passing preflight means only that the configured static checks passed. It is not proof of correctness or security.
+- Generated source is never evaluated, imported, executed, committed, or deployed by this release. No real OS/container sandbox or automated unit-test runner is connected yet.
+- Human review and approval remain mandatory before any implementation workflow.
