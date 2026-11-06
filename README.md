@@ -1,8 +1,8 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.5.0 — Semantic Retrieval & Vector Memory Engine**
+**CORTANA CORE v0.6.0 — Emotional & Personality Core**
 
-CORTANA is a browser-first, multi-platform AI agent project. v0.5.0 adds server-side embeddings and optional Cloudflare Vectorize semantic retrieval to the user-controlled D1 memory introduced in v0.4.0.
+CORTANA is a browser-first, multi-platform AI agent project. v0.6.0 adds a local, user-configurable personality profile and lightweight interaction-state cues. Semantic memory from v0.5.0 remains available.
 
 > Memory remains opt-in and manually managed. D1 is authoritative; vector search is an optional index. If embeddings or Vectorize are unavailable, bounded keyword retrieval remains available.
 
@@ -43,3 +43,13 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 5. Proposed changes must be reviewable, tested, auditable, and reversible.
 6. Memory must be inspectable, exportable, and deletable by the user.
 7. Never present a simulated capability as a live integration.
+
+
+## Emotional & Personality Core (v0.6.0)
+
+- Four selectable response styles: balanced, analytical, warm, concise.
+- Six interaction cues: neutral, curious, supportive, focused, positive, calm.
+- Cue classification is a lightweight heuristic over the current user message, not emotion recognition or diagnosis.
+- The selected style is stored locally in the browser; it is sent as a validated enum and never grants additional permissions.
+- Hologram presentation responds to the current interaction cue.
+- No emotion inference from camera, voice biometrics, or hidden behavioral profiling.
