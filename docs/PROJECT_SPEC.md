@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.9.1 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.10.0 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -66,6 +66,7 @@ The memory bearer token remains a capability, not a full account-authentication 
 | 0.8.0 | Governed self-programming with approval and rollback |
 | 0.9.0 | Code artifact preflight, static risk checks, and test-plan capture |
 | 0.9.1 | Automated unit tests and pull-request quality gates for the preflight validator |
+| 0.10.0 | Experimental local isolated execution runner |
 | 1.0.0 | Stable cross-platform platform |
 
 ## 7. Implementation status at v0.5.0
@@ -143,3 +144,14 @@ Software state and retrieval behavior are not evidence of subjective experience 
 - CI tests the trusted validator source only. User-submitted artifact text is never passed to a shell, test runner, dynamic import, or evaluator.
 - Workflow token permissions are read-only. This gate does not publish, deploy, merge, or write repository content.
 - A green test suite is evidence for the tested cases, not proof that the static scanner is complete or that arbitrary code is safe.
+
+
+## 13. v0.10.0 Isolated Execution Sandbox
+
+- Adds an experimental local runner for one standalone JavaScript module.
+- The launcher requires Docker with the gVisor runsc runtime and refuses fallback to runc.
+- Container controls include network isolation, read-only root filesystem, non-root UID, dropped Linux capabilities, no-new-privileges, bounded memory/CPU/PIDs/time/output, private IPC/cgroup namespace, bounded noexec temporary storage, and a read-only single-file artifact mount.
+- No dependency installation, secret injection, repository checkout, browser-triggered execution, remote execution API, Cloudflare Pages execution, GitHub Actions execution, source write-back, Git commit, PR merge, or deployment is included.
+- The runner is a local operator tool only. Docker daemon access is privileged; never expose its socket or launcher to browser or public HTTP traffic.
+- Sandbox output is untrusted diagnostic data. Human review is mandatory before any patch is applied.
+- Production use still requires a dedicated patched host, pinned image digest, SBOM, adversarial integration tests, source-hash attestation, and independent threat-model review.

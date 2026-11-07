@@ -1,6 +1,6 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.9.1 — Automated Preflight Test Gates**
+**CORTANA CORE v0.10.0 — Isolated Execution Sandbox**
 
 CORTANA is a browser-first, multi-platform AI agent project. v0.7.0 adds explicit response ratings and a local, reviewable preference-adaptation loop on top of the v0.6.0 personality profile. Semantic memory from v0.5.0 remains available.
 
@@ -92,3 +92,15 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - Added a GitHub Actions pull-request workflow that installs dependencies, runs unit tests, and runs the production build/typecheck.
 - The workflow uses read-only repository permissions and does not execute submitted artifacts; it tests the trusted validator implementation only.
 - No actual untrusted-code execution or OS/container sandbox is introduced by this release.
+
+
+## Isolated Execution Sandbox (v0.10.0)
+
+- Adds an experimental local runner for one standalone JavaScript artifact.
+- Requires Docker with gVisor runsc; it fails closed if the runtime is unavailable.
+- Applies no-network, read-only root, non-root UID, dropped capabilities, no-new-privileges, CPU/memory/PID/time/output limits, and a read-only artifact mount.
+- The runner is not connected to the browser UI, Cloudflare Pages, GitHub Actions, or an HTTP API.
+- It does not install packages, access secrets, write to the repository, create commits, merge PRs, or deploy.
+- See [Isolated Execution Contract](docs/SANDBOX_EXECUTION.md) and [runner operator guide](sandbox-runner/README.md).
+
+A passing static check or sandbox run is not proof of safety. Human review and explicit approval remain mandatory.
