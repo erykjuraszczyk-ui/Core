@@ -67,6 +67,7 @@ The memory bearer token remains a capability, not a full account-authentication 
 | 0.9.0 | Code artifact preflight, static risk checks, and test-plan capture |
 | 0.9.1 | Automated unit tests and pull-request quality gates for the preflight validator |
 | 0.10.0 | Experimental local isolated execution runner |
+| 0.10.1 | Sandbox launcher hardening and static security-contract tests |
 | 1.0.0 | Stable cross-platform platform |
 
 ## 7. Implementation status at v0.5.0
@@ -155,3 +156,13 @@ Software state and retrieval behavior are not evidence of subjective experience 
 - The runner is a local operator tool only. Docker daemon access is privileged; never expose its socket or launcher to browser or public HTTP traffic.
 - Sandbox output is untrusted diagnostic data. Human review is mandatory before any patch is applied.
 - Production use still requires a dedicated patched host, pinned image digest, SBOM, adversarial integration tests, source-hash attestation, and independent threat-model review.
+
+
+## 14. v0.10.1 Sandbox Runtime Validation & Security Hardening
+
+- Adds static tests that inspect the trusted launcher, Dockerfile, runner entrypoint, and execution contract for required isolation controls.
+- Makes private IPC mode explicit in the Docker invocation.
+- Updates the default runner image tag to v0.10.1.
+- The test suite does not execute submitted code or start Docker containers.
+- A successful CI run validates expected configuration text only; it is not proof of runtime isolation.
+- Actual gVisor integration and adversarial testing remain required on a dedicated patched Linux host.
