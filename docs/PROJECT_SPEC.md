@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.9.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.9.1 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -65,6 +65,7 @@ The memory bearer token remains a capability, not a full account-authentication 
 | 0.7.0 | Curated feedback and evaluation loop |
 | 0.8.0 | Governed self-programming with approval and rollback |
 | 0.9.0 | Code artifact preflight, static risk checks, and test-plan capture |
+| 0.9.1 | Automated unit tests and pull-request quality gates for the preflight validator |
 | 1.0.0 | Stable cross-platform platform |
 
 ## 7. Implementation status at v0.5.0
@@ -133,3 +134,12 @@ Software state and retrieval behavior are not evidence of subjective experience 
 - Passing checks are a preliminary static gate only. Pattern scans can produce false positives and false negatives; they do not parse or prove program behavior.
 - This release does not execute untrusted code. A true sandbox runner (ephemeral container/VM, no secrets, deny-by-default network, CPU/memory/time limits, read-only base image) and automated unit-test execution are not yet connected. The UI explicitly discloses this limitation.
 - No source write, Git commit, PR merge, or deployment occurs from the artifact workspace. Any later execution service must return logs and a diff for human review before a separately authorized implementation step.
+
+
+## 12. v0.9.1 Automated Preflight Test Gates
+
+- Vitest tests cover allowed paths, protected paths, required metadata, source size, NUL-byte rejection, and selected risk-pattern detection.
+- Pull requests run dependency installation, the unit-test suite, and the normal production build/typecheck in GitHub Actions.
+- CI tests the trusted validator source only. User-submitted artifact text is never passed to a shell, test runner, dynamic import, or evaluator.
+- Workflow token permissions are read-only. This gate does not publish, deploy, merge, or write repository content.
+- A green test suite is evidence for the tested cases, not proof that the static scanner is complete or that arbitrary code is safe.

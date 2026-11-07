@@ -19,7 +19,7 @@ type Message = {
 const initialMessages: Message[] = [{
   id: 1,
   role: "cortana",
-  text: "CORTANA CORE v0.9.0 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
+  text: "CORTANA CORE v0.9.1 uruchomiona. Kanał tekstowy łączy się z serwerowym modelem AI; Voice Core korzysta z API przeglądarki, jeśli jest dostępne. Pamięć trwała jest opcjonalna i domyślnie wyłączona.",
   time: "SYSTEM",
 }];
 
@@ -315,7 +315,7 @@ export default function App() {
       <header className="topbar">
         <a className="brand" href="#top" aria-label="CORTANA CORE — strona główna">
           <span className="brand-mark">C</span>
-          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.9.0</small></span>
+          <span className="brand-copy"><strong>CORTANA</strong><small>CORE SYSTEM / 0.9.1</small></span>
         </a>
         <div className="topbar-center"><span className="live-dot" /> HOLOGRAPHIC RUNTIME</div>
         <div className="topbar-right">
