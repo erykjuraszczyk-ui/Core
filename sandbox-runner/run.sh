@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-IMAGE="${CORTANA_SANDBOX_IMAGE:-cortana-sandbox:0.10.0}"
+IMAGE="${CORTANA_SANDBOX_IMAGE:-cortana-sandbox:0.10.1}"
 SOURCE="${1:-}"
 TIME_LIMIT="${CORTANA_SANDBOX_TIMEOUT_SECONDS:-5}"
 
@@ -38,7 +38,7 @@ timeout "${TIME_LIMIT}s" docker run --rm --pull=never \
   --runtime=runsc --network=none --read-only --user=10001:10001 \
   --cap-drop=ALL --security-opt=no-new-privileges \
   --pids-limit=32 --memory=128m --memory-swap=128m --cpus=0.50 \
-  --ulimit=nofile=64:64 --ipc=none --cgroupns=private \
+  --ulimit=nofile=64:64 --ipc=private --cgroupns=private \
   --tmpfs /tmp:rw,noexec,nosuid,nodev,size=16m \
   --mount "type=bind,src=$WORK/artifact.mjs,dst=/workspace/artifact.mjs,readonly" \
   --entrypoint=node "$IMAGE" \
