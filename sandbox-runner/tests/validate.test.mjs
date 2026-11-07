@@ -20,7 +20,7 @@ test("rejects empty and oversized artifacts by byte length", () => {
 });
 
 test("accepts the exact byte limit", () => {
-  assert.equal(validateArtifact(ARTIFACT_PATH, new Uint8Array(MAX_ARTIFACT_BYTES)).ok, true);
+  assert.equal(validateArtifact(ARTIFACT_PATH, encode("a".repeat(MAX_ARTIFACT_BYTES))).ok, true);
 });
 
 test("rejects NUL bytes", () => {
