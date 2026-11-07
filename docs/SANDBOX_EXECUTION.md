@@ -33,3 +33,12 @@ The sandbox output is untrusted diagnostic data. It must be reviewed alongside t
 ## Known limitation
 
 The initial runner is experimental and local. Before production use, add a pinned image digest and software bill of materials, adversarial integration tests, structured result records, source SHA-256 attestation, and an independently reviewed threat model.
+
+
+## v0.10.1 input validation and CI
+
+- The runner validates the fixed artifact path and raw byte buffer before decoding or importing the artifact.
+- Accepted input is 1–20,000 bytes, strict UTF-8, and contains no NUL byte.
+- Node's built-in test runner covers these validation cases and is invoked by the quality-gates workflow. The test suite tests the trusted validator only; it does not execute untrusted code.
+- Launcher output is first captured to a temporary file, then truncated for display. The runner uses a bounded timeout and kill-after grace period.
+- These checks are preflight controls, not proof of sandbox escape resistance. Docker/gVisor adversarial integration tests remain outstanding.

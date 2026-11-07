@@ -1,6 +1,6 @@
 # CORTANA CORE — Project Specification
 
-**Baseline:** v0.10.0 · **Primary client:** browser · **Default language:** Polish
+**Baseline:** v0.10.1 · **Primary client:** browser · **Default language:** Polish
 
 This specification consolidates the source concept in *CORTANA — Instrukcja Systemu Żywego v2.0* with the initial implementation decisions.
 
@@ -67,6 +67,7 @@ The memory bearer token remains a capability, not a full account-authentication 
 | 0.9.0 | Code artifact preflight, static risk checks, and test-plan capture |
 | 0.9.1 | Automated unit tests and pull-request quality gates for the preflight validator |
 | 0.10.0 | Experimental local isolated execution runner |
+| 0.10.1 | Byte-level artifact validation and sandbox runner contract tests |
 | 1.0.0 | Stable cross-platform platform |
 
 ## 7. Implementation status at v0.5.0
@@ -155,3 +156,13 @@ Software state and retrieval behavior are not evidence of subjective experience 
 - The runner is a local operator tool only. Docker daemon access is privileged; never expose its socket or launcher to browser or public HTTP traffic.
 - Sandbox output is untrusted diagnostic data. Human review is mandatory before any patch is applied.
 - Production use still requires a dedicated patched host, pinned image digest, SBOM, adversarial integration tests, source-hash attestation, and independent threat-model review.
+
+
+## 14. v0.10.1 Sandbox Preflight Hardening
+
+- Extracts deterministic byte-level artifact validation into a separate trusted module.
+- Enforces the fixed artifact path, 1–20,000 byte size, absence of NUL bytes, and strict UTF-8 decoding.
+- Adds Node.js built-in test coverage for valid input, path traversal attempts, byte boundaries, NUL bytes, malformed UTF-8, and invalid input types.
+- CI runs the sandbox contract tests and validates launcher shell syntax. These tests do not execute submitted artifacts.
+- Launcher captures output to a temporary host file before truncating display, avoiding a pipe-to-head truncation race; it applies a bounded timeout with a kill-after grace period.
+- This remains an experimental local runner. Runtime-level adversarial tests with Docker and gVisor are still required and have not been represented as passed.
