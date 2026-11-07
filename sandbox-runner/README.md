@@ -32,3 +32,10 @@ Optional environment variables: CORTANA_SANDBOX_IMAGE and CORTANA_SANDBOX_TIMEOU
 6. A successful run is diagnostic evidence, not approval to merge or deploy. Review output and source manually.
 
 No arbitrary code is run in GitHub Actions or in the Cloudflare Pages production runtime.
+
+
+## v0.10.1 input validation
+
+The runner validates the raw artifact bytes before decoding: size is measured in bytes, UTF-8 decoding is fatal (invalid sequences are rejected), and NUL bytes are rejected. The contract is shared with unit tests.
+
+The repository CI runs contract tests and Bash syntax validation only. It does not launch Docker or gVisor and must not be described as proof of container isolation.

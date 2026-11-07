@@ -22,6 +22,8 @@ jobs:
           node-version: "22"
       - name: Install dependencies
         run: npm install --no-audit --no-fund
+      - name: Validate sandbox launcher syntax
+        run: bash -n sandbox-runner/run.sh
       - name: Unit tests
         run: npm test
       - name: Typecheck and production build

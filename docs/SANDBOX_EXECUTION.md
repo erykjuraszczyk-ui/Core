@@ -33,3 +33,8 @@ The sandbox output is untrusted diagnostic data. It must be reviewed alongside t
 ## Known limitation
 
 The initial runner is experimental and local. Before production use, add a pinned image digest and software bill of materials, adversarial integration tests, structured result records, source SHA-256 attestation, and an independently reviewed threat model.
+
+
+## v0.10.1 input validation addendum
+
+The runner validates raw bytes before decoding, rejects malformed UTF-8 and NUL bytes, and enforces the 20,000-byte limit. Unit tests cover the contract. CI performs a Bash syntax check but does not launch Docker/gVisor.
