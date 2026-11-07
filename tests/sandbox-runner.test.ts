@@ -20,7 +20,7 @@ describe("isolated runner input contract", () => {
   });
 
   it("measures UTF-8 bytes, not JavaScript UTF-16 code units", () => {
-    expect(validateArtifactBytes(bytes("ą".repeat(10_001))).reason).toBe("size-out-of-range");
+    expect(validateArtifactBytes(bytes("ą".repeat(10_001)))).toMatchObject({ ok: false, reason: "size-out-of-range" });
   });
 
   it("rejects malformed UTF-8 and NUL bytes", () => {
