@@ -1,6 +1,6 @@
 # CORTANA CORE
 
-**CORTANA CORE v0.10.0 — Isolated Execution Sandbox**
+**CORTANA CORE v0.10.1 — Sandbox Preflight Hardening**
 
 CORTANA is a browser-first, multi-platform AI agent project. v0.7.0 adds explicit response ratings and a local, reviewable preference-adaptation loop on top of the v0.6.0 personality profile. Semantic memory from v0.5.0 remains available.
 
@@ -94,9 +94,11 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - No actual untrusted-code execution or OS/container sandbox is introduced by this release.
 
 
-## Isolated Execution Sandbox (v0.10.0)
+## Isolated Execution Sandbox (v0.10.1)
 
 - Adds an experimental local runner for one standalone JavaScript artifact.
+- Adds byte-level UTF-8 validation and Node.js contract tests for invalid path, byte-size, NUL, and malformed UTF-8 inputs.
+- CI now runs the sandbox contract tests and checks the launcher shell syntax.
 - Requires Docker with gVisor runsc; it fails closed if the runtime is unavailable.
 - Applies no-network, read-only root, non-root UID, dropped capabilities, no-new-privileges, CPU/memory/PID/time/output limits, and a read-only artifact mount.
 - The runner is not connected to the browser UI, Cloudflare Pages, GitHub Actions, or an HTTP API.
