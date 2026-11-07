@@ -104,3 +104,12 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - See [Isolated Execution Contract](docs/SANDBOX_EXECUTION.md) and [runner operator guide](sandbox-runner/README.md).
 
 A passing static check or sandbox run is not proof of safety. Human review and explicit approval remain mandatory.
+
+
+## Sandbox Runtime Validation & Security Hardening (v0.10.1)
+
+- Adds static Vitest checks for launcher, Dockerfile, runtime entrypoint, and security contract invariants.
+- Makes Docker IPC isolation explicit with private IPC mode.
+- Updates the local runner image tag to v0.10.1.
+- CI tests only trusted project files. It does not execute submitted code, invoke Docker, or claim gVisor integration success.
+- Actual container integration tests remain a separate task for a dedicated Linux host with gVisor installed.
