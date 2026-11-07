@@ -1,7 +1,7 @@
 #!/bin/bash
 set -euo pipefail
 
-IMAGE="${CORTANA_SANDBOX_IMAGE:-cortana-sandbox:0.10.0}"
+IMAGE="${CORTANA_SANDBOX_IMAGE:-cortana-sandbox:0.10.1}"
 SOURCE="${1:-}"
 TIME_LIMIT="${CORTANA_SANDBOX_TIMEOUT_SECONDS:-5}"
 
@@ -34,7 +34,7 @@ cp "$SOURCE" "$WORK/artifact.mjs"
 chmod 0444 "$WORK/artifact.mjs"
 
 set +e
-timeout "${TIME_LIMIT}s" docker run --rm --pull=never \
+timeout --signal=TERM --kill-after=2s "${TIME_LIMIT}s" docker run --rm --pull=never \
   --runtime=runsc --network=none --read-only --user=10001:10001 \
   --cap-drop=ALL --security-opt=no-new-privileges \
   --pids-limit=32 --memory=128m --memory-swap=128m --cpus=0.50 \
@@ -43,11 +43,13 @@ timeout "${TIME_LIMIT}s" docker run --rm --pull=never \
   --mount "type=bind,src=$WORK/artifact.mjs,dst=/workspace/artifact.mjs,readonly" \
   --entrypoint=node "$IMAGE" \
   --permission --allow-fs-read=/workspace --allow-fs-write=/tmp \
-  --disable-proto=throw /workspace/runner.mjs /workspace/artifact.mjs 2>&1 | head -c 65536
-PIPE_STATUS=${PIPESTATUS[0]}
+  --disable-proto=throw /workspace/runner.mjs /workspace/artifact.mjs \
+  >"$WORK/output.log" 2>&1
+RUN_STATUS=$?
 set -e
-if (( PIPE_STATUS == 124 )); then
+head -c 65536 "$WORK/output.log"
+if (( RUN_STATUS == 124 || RUN_STATUS == 137 )); then
   echo "BLOCKED: przekroczono limit czasu." >&2
   exit 124
 fi
-exit "$PIPE_STATUS"
+exit "$RUN_STATUS"
