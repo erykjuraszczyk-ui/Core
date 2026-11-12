@@ -104,3 +104,10 @@ See [Project Specification](docs/PROJECT_SPEC.md), [Agent API](docs/AGENT_API.md
 - See [Isolated Execution Contract](docs/SANDBOX_EXECUTION.md) and [runner operator guide](sandbox-runner/README.md).
 
 A passing static check or sandbox run is not proof of safety. Human review and explicit approval remain mandatory.
+
+
+## v0.10.1 — Sandbox Input Hardening
+
+- Runner input validation now measures UTF-8 bytes, rejects malformed UTF-8 and NUL bytes, and uses a shared tested contract.
+- Added unit tests for the runner input contract and a Bash syntax check for the launcher in CI.
+- These tests do not launch Docker or gVisor; container isolation still requires host-side integration testing.

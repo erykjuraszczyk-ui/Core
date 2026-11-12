@@ -155,3 +155,11 @@ Software state and retrieval behavior are not evidence of subjective experience 
 - The runner is a local operator tool only. Docker daemon access is privileged; never expose its socket or launcher to browser or public HTTP traffic.
 - Sandbox output is untrusted diagnostic data. Human review is mandatory before any patch is applied.
 - Production use still requires a dedicated patched host, pinned image digest, SBOM, adversarial integration tests, source-hash attestation, and independent threat-model review.
+
+
+## 14. v0.10.1 Sandbox Input Hardening
+
+- A shared input contract validates raw bytes before decoding: 1–20,000 bytes, strict UTF-8 decoding, and NUL-byte rejection.
+- Vitest covers valid input, empty and oversized artifacts, UTF-8 byte counting, malformed UTF-8, NUL bytes, and non-byte inputs.
+- CI syntax-checks the Bash launcher.
+- CI does not launch Docker or gVisor; host-side isolation tests remain a separate validation requirement.
