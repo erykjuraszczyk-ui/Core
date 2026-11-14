@@ -1,0 +1,413 @@
+openapi: 3.1.0
+info:
+  title: CORTANA Core API
+  version: 1.0.0
+  description: |
+    Versioned integration contract for browser, Android, Cortana World and SOUL CORE adapters.
+    This file defines the target API shape. It is a contract, not evidence that every route
+    is implemented in the current deployment. Legacy /api/* routes remain supported during migration.
+servers:
+  - url: /
+tags:
+  - name: System
+  - name: Chat
+  - name: Memory
+paths:
+  /api/v1/health:
+    get:
+      tags: [System]
+      operationId: getHealth
+      summary: Return Core service and integration status
+      responses:
+        "200":
+          description: Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [service, version, status, integrations]
+                properties:
+                  service: { type: string, const: cortana-core }
+                  version: { type: string }
+                  status: { type: string, enum: [ok, degraded] }
+                  integrations:
+                    type: object
+                    additionalProperties: true
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/chat:
+    post:
+      tags: [Chat]
+      operationId: streamChat
+      summary: Stream an assistant response
+      description: |
+        Returns provider-compatible Server-Sent Events. Chat transcripts are not persisted by default.
+        Memory authorization is optional; when supplied, the server reads only approved entries from
+        the authorized memory space. Clients cannot select the model provider, provider URL or system prompt.
+      security:
+        - {}
+        - MemoryCapability: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChatRequest"
+      responses:
+        "200":
+          description: Server-Sent Events stream
+          content:
+            text/event-stream:
+              schema:
+                type: string
+                description: UTF-8 SSE stream; event framing follows the configured provider's compatible streaming format.
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "413":
+          $ref: "#/components/responses/PayloadTooLarge"
+        "415":
+          $ref: "#/components/responses/UnsupportedMediaType"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "502":
+          $ref: "#/components/responses/BadGateway"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/memory/spaces:
+    post:
+      tags: [Memory]
+      operationId: createMemorySpace
+      summary: Create an opt-in memory space
+      description: |
+        First-party bootstrap operation. Returns an opaque bearer capability once.
+        This capability is not an account identity or a native-client session. Do not use it
+        for cross-device Android or Cortana World access until session authentication,
+        expiry, rotation and revocation are implemented and reviewed.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                consent:
+                  type: boolean
+                  const: true
+              required: [consent]
+              additionalProperties: false
+      responses:
+        "201":
+          description: Memory space created; capability is returned once
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [created, capability]
+                properties:
+                  created: { type: boolean, const: true }
+                  capability: { type: string, minLength: 64 }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "429":
+          $ref: "#/components/responses/RateLimited"
+  /api/v1/memory/entries:
+    get:
+      tags: [Memory]
+      operationId: listMemoryEntries
+      summary: List approved memory entries
+      security:
+        - MemoryCapability: []
+      responses:
+        "200":
+          description: Entries belonging to the authorized memory space
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entries]
+                properties:
+                  entries:
+                    type: array
+                    maxItems: 100
+                    items:
+                      $ref: "#/components/schemas/MemoryEntry"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+    post:
+      tags: [Memory]
+      operationId: createMemoryEntry
+      summary: Save an explicitly approved memory entry
+      security:
+        - MemoryCapability: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryEntryCreate"
+      responses:
+        "201":
+          description: Canonical D1 entry created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [entry, projection]
+                properties:
+                  entry: { $ref: "#/components/schemas/MemoryEntry" }
+                  projection:
+                    type: string
+                    enum: [pending, indexed, unavailable]
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "409":
+          description: Idempotency key reused with a different request or memory limit reached
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+        "429":
+          $ref: "#/components/responses/RateLimited"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/v1/memory/entries/{entryId}:
+    parameters:
+      - name: entryId
+        in: path
+        required: true
+        schema: { type: string, format: uuid }
+    patch:
+      tags: [Memory]
+      operationId: updateMemoryEntry
+      summary: Correct an approved memory entry
+      security:
+        - MemoryCapability: []
+      parameters:
+        - $ref: "#/components/parameters/IdempotencyKey"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/MemoryEntryPatch"
+      responses:
+        "200":
+          description: Canonical entry updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemoryEntry"
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+        "409":
+          description: Idempotency or version conflict
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ApiError" }
+    delete:
+      tags: [Memory]
+      operationId: deleteMemoryEntry
+      summary: Delete one memory entry
+      security:
+        - MemoryCapability: []
+      responses:
+        "200":
+          description: Entry is no longer retrievable; index cleanup may complete asynchronously
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted: { type: boolean, const: true }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "404":
+          $ref: "#/components/responses/NotFound"
+  /api/v1/memory/spaces/current:
+    delete:
+      tags: [Memory]
+      operationId: deleteMemorySpace
+      summary: Delete the current memory space and revoke its capability
+      security:
+        - MemoryCapability: []
+      responses:
+        "200":
+          description: Canonical records are deleted and capability is revoked
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted: { type: boolean, const: true }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+components:
+  securitySchemes:
+    MemoryCapability:
+      type: http
+      scheme: bearer
+      bearerFormat: opaque-256-bit-capability
+      description: |
+        Existing first-party memory-space capability. Not a user login or native-client session.
+        The current implementation does not demonstrate expiry, rotation or revocation.
+  parameters:
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      description: Unique stable key for one logical mutation; replays must return the original result.
+      schema:
+        type: string
+        minLength: 16
+        maxLength: 128
+  schemas:
+    ChatRequest:
+      type: object
+      required: [messages]
+      properties:
+        messages:
+          type: array
+          minItems: 1
+          maxItems: 20
+          items:
+            $ref: "#/components/schemas/ChatMessage"
+        personality:
+          type: string
+          enum: [balanced, analytical, warm, concise]
+          default: balanced
+        mood:
+          type: string
+          enum: [neutral, curious, supportive, focused, positive, calm]
+          default: neutral
+      additionalProperties: false
+    ChatMessage:
+      type: object
+      required: [role, content]
+      properties:
+        role:
+          type: string
+          enum: [user, assistant]
+        content:
+          type: string
+          minLength: 1
+          maxLength: 4000
+      additionalProperties: false
+    MemoryEntry:
+      type: object
+      required: [id, kind, content, tags, source, createdAt, updatedAt]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [semantic, episode] }
+        content: { type: string, minLength: 1, maxLength: 4000 }
+        tags:
+          type: array
+          maxItems: 10
+          items: { type: string, maxLength: 40 }
+        source: { type: string }
+        createdAt: { type: string, format: date-time }
+        updatedAt: { type: string, format: date-time }
+    MemoryEntryCreate:
+      type: object
+      required: [kind, content]
+      properties:
+        kind: { type: string, enum: [semantic, episode] }
+        content: { type: string, minLength: 1, maxLength: 4000 }
+        tags:
+          type: array
+          maxItems: 10
+          items: { type: string, maxLength: 40 }
+      additionalProperties: false
+    MemoryEntryPatch:
+      type: object
+      minProperties: 1
+      properties:
+        kind: { type: string, enum: [semantic, episode] }
+        content: { type: string, minLength: 1, maxLength: 4000 }
+        tags:
+          type: array
+          maxItems: 10
+          items: { type: string, maxLength: 40 }
+      additionalProperties: false
+    ApiError:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [code, message, requestId]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            requestId: { type: string }
+            retryable: { type: boolean, default: false }
+  responses:
+    BadRequest:
+      description: Invalid payload or request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Unauthorized:
+      description: Missing, expired or invalid capability/session
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    Forbidden:
+      description: Origin or authorization policy rejected the request
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    NotFound:
+      description: Requested resource was not found in the authorized memory space
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    PayloadTooLarge:
+      description: Request exceeded the configured size limit
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    UnsupportedMediaType:
+      description: JSON content type required
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    RateLimited:
+      description: Durable rate limit exceeded
+      headers:
+        Retry-After:
+          schema: { type: integer }
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    BadGateway:
+      description: Upstream model provider failed
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
+    ServiceUnavailable:
+      description: Required dependency is not configured or available
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/ApiError" }
