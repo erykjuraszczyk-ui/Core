@@ -265,6 +265,16 @@ paths:
           $ref: "#/components/responses/Unauthorized"
 components:
   securitySchemes:
+    CoreAccessToken:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Short-lived OIDC access token issued by the selected identity provider. Core must
+        validate its signature using provider JWKS and enforce issuer, audience, expiry,
+        not-before, allowed algorithms and required scopes. This scheme describes the
+        target authenticated API; it does not imply that the current deployment already
+        issues or accepts these tokens.
     MemoryCapability:
       type: http
       scheme: bearer

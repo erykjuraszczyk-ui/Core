@@ -56,3 +56,18 @@ Use a **modular Core API with ports and adapters** as the integration boundary.
 - [CORTANA Integration 0.11.0](CORTANA_INTEGRATION_0.11.0.md)
 - [Implementation plan 0.11.0](IMPLEMENTATION_PLAN_0.11.0.md)
 - [OpenAPI v1 contract](../api/openapi-v1.yaml)
+
+## Q-001 — Authentication provider (resolved 2026-11-14)
+
+**Decision:** Auth0 as the initial OpenID Provider, using OpenID Connect and OAuth 2.0 Authorization Code Flow with PKCE (S256) for public clients.
+
+- Browser: use the OIDC Authorization Code flow with a server-managed session and Secure, HttpOnly, SameSite cookies. Do not store long-lived tokens in browser local storage.
+- Android: use the system browser / Custom Tabs with Authorization Code + PKCE S256. Keep refresh-token material protected by Android Keystore; enable refresh-token rotation and reuse detection where supported.
+- Cortana World: use the browser session through Core's backend-for-frontend boundary; do not embed a client secret in the frontend.
+- Core API: validate access-token signature via the provider JWKS and enforce issuer, audience, expiry, not-before, allowed algorithms and scopes/permissions. Do not merely decode JWTs.
+- Provider and API secrets remain server-side. Use separate OIDC clients for browser and Android with exact redirect URI allowlists.
+- Keep the existing memory capability as a temporary compatibility mechanism only. Migrate memory authorization to authenticated subject + server-side ownership mapping; never expose the legacy capability to native clients.
+
+**Implementation guardrails:** provider configuration, callback handling, token exchange, cookie/session settings, logout/revocation, CSRF/state/nonce validation, PKCE verifier handling, key rotation and account recovery require dedicated tests and security review. No production tenant, secret or callback URL is provisioned by this architecture decision.
+
+**Re-evaluation:** Auth0 is the selected initial provider, not a hard dependency in the Core domain. Implement an OIDC adapter so a future provider change does not require rewriting authorization policy.

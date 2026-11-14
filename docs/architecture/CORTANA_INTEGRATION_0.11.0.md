@@ -80,13 +80,17 @@ The first versioned contract is defined in OpenAPI v1.
 
 The current memory token is a bearer capability, not an authenticated user session. It is acceptable only as the existing first-party memory-space capability under the current documented limitations. It must not be exposed in URLs, logs, analytics, crash reports or source control.
 
-Before Android or Cortana World receive cross-device memory access, implement and review:
-- an explicit account/session mechanism;
-- short-lived access credentials and refresh/revocation semantics;
-- per-user and per-device authorization;
-- durable abuse controls and rate limiting;
-- explicit consent for memory access and synchronization;
-- auditable export and deletion behaviour.
+**Selected provider:** Auth0 via OpenID Connect. Use Authorization Code + PKCE S256 for public clients.
+
+- Browser and World 3D: Core backend-for-frontend session using Secure, HttpOnly, SameSite cookies; no long-lived tokens in local storage.
+- Android: system browser / Custom Tabs, PKCE S256, exact redirect URI allowlist and refresh-token protection using Android Keystore.
+- Core API: validate JWT signature against provider JWKS and enforce issuer, audience, expiry, not-before, algorithm and scopes/permissions.
+- Separate OIDC clients for browser and Android. No client secret in browser or APK.
+- Implement logout, refresh-token rotation/reuse detection, revocation, CSRF/state/nonce validation, PKCE verifier handling and key rotation.
+- Map authenticated subject to a server-owned memory-space ID. Keep the legacy memory capability isolated during migration; never expose it to native clients.
+- Add per-user/per-device authorization, durable abuse controls, explicit memory consent and auditable export/deletion.
+
+Auth0 is an adapter choice, not a dependency of Core's domain model; keep the OIDC integration replaceable.
 
 Do not ship a long-lived memory capability as a substitute for login. Do not enable bidirectional local/cloud sync until conflict ownership and resolution rules are approved.
 
