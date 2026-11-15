@@ -13,6 +13,49 @@ tags:
   - name: Chat
   - name: Memory
 paths:
+  /api/identity:
+    get:
+      tags: [System]
+      operationId: getAuthenticatedIdentity
+      summary: Verify an OIDC access token and return its minimal principal
+      description: |
+        Verifies the JWT signature against the configured issuer JWKS and enforces issuer,
+        audience, expiry, not-before and the RS256 algorithm. This endpoint does not create
+        a browser session or authorize memory access.
+      security:
+        - CoreAccessToken: []
+      responses:
+        "200":
+          description: Authenticated principal
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [authenticated, user]
+                properties:
+                  authenticated: { type: boolean, const: true }
+                  user:
+                    type: object
+                    required: [subject, issuer, audience, scopes, expiresAt]
+                    properties:
+                      subject: { type: string }
+                      issuer: { type: string, format: uri }
+                      audience:
+                        type: array
+                        items: { type: string }
+                      scopes:
+                        type: array
+                        items: { type: string }
+                      expiresAt: { type: integer }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
   /api/v1/health:
     get:
       tags: [System]
