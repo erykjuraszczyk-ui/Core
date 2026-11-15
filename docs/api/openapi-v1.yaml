@@ -13,6 +13,107 @@ tags:
   - name: Chat
   - name: Memory
 paths:
+  /api/auth/login:
+    get:
+      tags: [System]
+      operationId: beginOidcLogin
+      summary: Start the server-side OIDC Authorization Code + PKCE flow
+      parameters:
+        - name: returnTo
+          in: query
+          required: false
+          schema: { type: string, maxLength: 512 }
+      responses:
+        "302":
+          description: Redirect to the configured OpenID Provider
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/auth/callback:
+    get:
+      tags: [System]
+      operationId: completeOidcLogin
+      summary: Validate OIDC callback and create a server-side session
+      parameters:
+        - name: code
+          in: query
+          required: true
+          schema: { type: string }
+        - name: state
+          in: query
+          required: true
+          schema: { type: string }
+      responses:
+        "302":
+          description: Redirect to the validated same-origin return path and set the HttpOnly session cookie
+          headers:
+            Set-Cookie:
+              schema: { type: string }
+        "400":
+          $ref: "#/components/responses/BadRequest"
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/auth/session:
+    get:
+      tags: [System]
+      operationId: getBffSession
+      summary: Return minimal identity information for the current BFF session
+      security:
+        - CoreSessionCookie: []
+      responses:
+        "200":
+          description: Active server-side session
+          headers:
+            Cache-Control:
+              schema: { type: string, const: no-store }
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [authenticated, user, expiresAt]
+                properties:
+                  authenticated: { type: boolean, const: true }
+                  user:
+                    type: object
+                    required: [subject, issuer]
+                    properties:
+                      subject: { type: string }
+                      issuer: { type: string, format: uri }
+                  expiresAt: { type: integer }
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+  /api/auth/refresh:
+    post:
+      tags: [System]
+      operationId: refreshBffSession
+      summary: Refresh upstream tokens using the server-held refresh token
+      description: Requires an exact same-origin Origin header. Token material is never returned to the client.
+      security:
+        - CoreSessionCookie: []
+      responses:
+        "200":
+          description: Session token set refreshed and rotation persisted
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "403":
+          $ref: "#/components/responses/Forbidden"
+        "409":
+          description: Another request is already refreshing this session
+        "503":
+          $ref: "#/components/responses/ServiceUnavailable"
+  /api/auth/logout:
+    post:
+      tags: [System]
+      operationId: logoutBffSession
+      summary: Revoke the local BFF session and attempt provider refresh-token revocation
+      description: Requires an exact same-origin Origin header. Local revocation proceeds even if the provider is unavailable.
+      security:
+        - CoreSessionCookie: []
+      responses:
+        "200":
+          description: Local session deleted and cookie cleared
+          headers:
+            Set-Cookie:
+              schema: { type: string }
   /api/identity:
     get:
       tags: [System]
@@ -318,6 +419,11 @@ components:
         not-before, allowed algorithms and required scopes. This scheme describes the
         target authenticated API; it does not imply that the current deployment already
         issues or accepts these tokens.
+    CoreSessionCookie:
+      type: apiKey
+      in: cookie
+      name: __Host-cortana_session
+      description: Opaque server-side session identifier; the corresponding SHA-256 hash is stored in D1.
     MemoryCapability:
       type: http
       scheme: bearer
