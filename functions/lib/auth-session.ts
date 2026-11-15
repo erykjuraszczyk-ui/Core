@@ -1,7 +1,10 @@
-import { verifyAccessToken, type AuthenticatedPrincipal, type IdentityConfig } from "./identity";
+import { verifyAccessToken, type AuthenticatedPrincipal } from "./identity";
 import type { D1Database } from "./memory-store";
 
-export type AuthEnv = IdentityConfig & {
+export type AuthEnv = {
+  AUTH_ISSUER?: string;
+  AUTH_AUDIENCE?: string;
+  AUTH_JWKS_URL?: string;
   CORTANA_DB?: D1Database;
   AUTH_CLIENT_ID?: string;
   AUTH_CLIENT_SECRET?: string;
@@ -121,9 +124,9 @@ function validHttpsUrl(value: unknown): value is string {
 }
 
 export async function discoverOidc(env: AuthEnv): Promise<OidcDiscovery> {
-  const issuer = env.issuer;
-  if (!validHttpsUrl(issuer) || !env.audience || !env.jwksUrl ||
-      !env.AUTH_CLIENT_ID || !env.AUTH_CLIENT_SECRET || !env.AUTH_REDIRECT_URI) {
+  const issuer = env.AUTH_ISSUER || "";
+  if (!validHttpsUrl(issuer) || !env.AUTH_AUDIENCE || !validHttpsUrl(env.AUTH_JWKS_URL) ||
+      !env.AUTH_CLIENT_ID || !env.AUTH_CLIENT_SECRET || !validHttpsUrl(env.AUTH_REDIRECT_URI)) {
     throw new Error("identity_not_configured");
   }
   const discoveryUrl = issuer.replace(/\/$/, "") + "/.well-known/openid-configuration";
@@ -139,7 +142,7 @@ export async function discoverOidc(env: AuthEnv): Promise<OidcDiscovery> {
   if (!isRecord(value) || value.issuer !== issuer ||
       !validHttpsUrl(value.authorization_endpoint) ||
       !validHttpsUrl(value.token_endpoint) ||
-      !validHttpsUrl(value.jwks_uri) ||
+      !validHttpsUrl(value.jwks_uri) || value.jwks_uri !== env.AUTH_JWKS_URL ||
       (value.revocation_endpoint !== undefined && !validHttpsUrl(value.revocation_endpoint)) ||
       (value.end_session_endpoint !== undefined && !validHttpsUrl(value.end_session_endpoint))) {
     throw new Error("oidc_discovery_invalid");
@@ -214,7 +217,7 @@ export async function beginLogin(env: AuthEnv, redirectAfter: string | null): Pr
   url.searchParams.set("nonce", nonce);
   url.searchParams.set("code_challenge", challenge);
   url.searchParams.set("code_challenge_method", "S256");
-  if (env.audience) url.searchParams.set("audience", env.audience);
+  if (env.AUTH_AUDIENCE) url.searchParams.set("audience", env.AUTH_AUDIENCE);
   return url.toString();
 }
 
@@ -249,9 +252,9 @@ async function exchangeCode(env: AuthEnv, discovery: OidcDiscovery, code: string
 
 async function validateIdToken(env: AuthEnv, idToken: string, nonce: string): Promise<AuthenticatedPrincipal> {
   const result = await verifyAccessToken(idToken, {
-    issuer: env.issuer,
+    issuer: env.AUTH_ISSUER!,
     audience: env.AUTH_CLIENT_ID!,
-    jwksUrl: env.jwksUrl,
+    jwksUrl: env.AUTH_JWKS_URL!,
   });
   if (!result.ok) throw new Error("id_token_invalid");
   const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(idToken.split(".")[1]))) as Record<string, unknown>;
@@ -282,7 +285,9 @@ export async function completeLogin(
       tokenResponse.expires_in <= 0) throw new Error("oidc_token_response_invalid");
 
   const principal = await validateIdToken(env, tokenResponse.id_token, transaction.nonce);
-  const apiToken = await verifyAccessToken(tokenResponse.access_token, env);
+  const apiToken = await verifyAccessToken(tokenResponse.access_token, {
+    issuer: env.AUTH_ISSUER!, audience: env.AUTH_AUDIENCE!, jwksUrl: env.AUTH_JWKS_URL!,
+  });
   if (!apiToken.ok) throw new Error("api_access_token_invalid");
   const refreshToken = typeof tokenResponse.refresh_token === "string" ? tokenResponse.refresh_token : null;
   const tokens: TokenSet = {
@@ -354,7 +359,9 @@ export async function refreshSession(env: AuthEnv, row: SessionRow): Promise<voi
     if (!response.ok || typeof payload.access_token !== "string" || typeof payload.expires_in !== "number") {
       throw new Error("refresh_token_rejected");
     }
-    const checked = await verifyAccessToken(payload.access_token, env);
+    const checked = await verifyAccessToken(payload.access_token, {
+      issuer: env.AUTH_ISSUER!, audience: env.AUTH_AUDIENCE!, jwksUrl: env.AUTH_JWKS_URL!,
+    });
     if (!checked.ok || checked.principal.subject !== row.subject) throw new Error("refreshed_access_token_invalid");
     const rotated: TokenSet = {
       accessToken: payload.access_token,
@@ -375,6 +382,10 @@ export async function refreshSession(env: AuthEnv, row: SessionRow): Promise<voi
     await env.CORTANA_DB.prepare(
       "UPDATE auth_sessions SET refresh_lock_until = 0 WHERE session_hash = ? AND refresh_lock_until = ?",
     ).bind(row.session_hash, lockUntil).run();
+    const reason = error instanceof Error ? error.message : "";
+    if (reason === "refresh_token_rejected" || reason === "refresh_token_missing") {
+      await env.CORTANA_DB.prepare("DELETE FROM auth_sessions WHERE session_hash = ?").bind(row.session_hash).run();
+    }
     throw error;
   }
 }
