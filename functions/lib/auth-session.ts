@@ -9,7 +9,6 @@ export type AuthEnv = {
   AUTH_CLIENT_ID?: string;
   AUTH_CLIENT_SECRET?: string;
   AUTH_REDIRECT_URI?: string;
-  AUTH_POST_LOGOUT_REDIRECT_URI?: string;
   AUTH_SESSION_ENCRYPTION_KEY?: string;
   AUTH_COOKIE_NAME?: string;
   AUTH_SESSION_TTL_SECONDS?: string;
@@ -258,7 +257,8 @@ async function validateIdToken(env: AuthEnv, idToken: string, nonce: string): Pr
   });
   if (!result.ok) throw new Error("id_token_invalid");
   const payload = JSON.parse(new TextDecoder().decode(base64UrlDecode(idToken.split(".")[1]))) as Record<string, unknown>;
-  if (payload.nonce !== nonce ||
+  if (payload.nonce !== nonce || typeof payload.iat !== "number" ||
+      (payload.azp !== undefined && payload.azp !== env.AUTH_CLIENT_ID) ||
       (result.principal.audience.length > 1 && payload.azp !== env.AUTH_CLIENT_ID)) {
     throw new Error("id_token_nonce_invalid");
   }
@@ -281,14 +281,14 @@ export async function completeLogin(
   const tokenResponse = await exchangeCode(env, discovery, code, verifier);
   if (typeof tokenResponse.id_token !== "string" ||
       typeof tokenResponse.access_token !== "string" ||
-      typeof tokenResponse.expires_in !== "number" ||
-      tokenResponse.expires_in <= 0) throw new Error("oidc_token_response_invalid");
+      typeof tokenResponse.expires_in !== "number" || !Number.isFinite(tokenResponse.expires_in) ||
+      tokenResponse.expires_in <= 0 || tokenResponse.token_type !== "Bearer") throw new Error("oidc_token_response_invalid");
 
   const principal = await validateIdToken(env, tokenResponse.id_token, transaction.nonce);
   const apiToken = await verifyAccessToken(tokenResponse.access_token, {
     issuer: env.AUTH_ISSUER!, audience: env.AUTH_AUDIENCE!, jwksUrl: env.AUTH_JWKS_URL!,
   });
-  if (!apiToken.ok) throw new Error("api_access_token_invalid");
+  if (!apiToken.ok || apiToken.principal.subject !== principal.subject) throw new Error("api_access_token_invalid");
   const refreshToken = typeof tokenResponse.refresh_token === "string" ? tokenResponse.refresh_token : null;
   const tokens: TokenSet = {
     accessToken: tokenResponse.access_token,
