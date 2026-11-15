@@ -14,19 +14,18 @@ export async function onRequestGet(context: { request: Request; env: AuthEnv }):
   }
   try {
     const result = await completeLogin(env, state, code);
-    return new Response(null, {
-      status: 302,
-      headers: {
-        Location: new URL(result.redirectAfter, url.origin).toString(),
-        "Set-Cookie": [result.cookie, clearOidcStateCookie()],
-        "Cache-Control": "no-store",
-        "Referrer-Policy": "no-referrer",
-      },
+    const headers = new Headers({
+      Location: new URL(result.redirectAfter, url.origin).toString(),
+      "Cache-Control": "no-store",
+      "Referrer-Policy": "no-referrer",
     });
+    headers.append("Set-Cookie", result.cookie);
+    headers.append("Set-Cookie", clearOidcStateCookie());
+    return new Response(null, { status: 302, headers });
   } catch {
-    return new Response("Nie udało się bezpiecznie zakończyć logowania.", {
-      status: 401,
-      headers: { "Set-Cookie": [clearSessionCookie(env), clearOidcStateCookie()], "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" },
-    });
+    const headers = new Headers({ "Cache-Control": "no-store", "Referrer-Policy": "no-referrer" });
+    headers.append("Set-Cookie", clearSessionCookie(env));
+    headers.append("Set-Cookie", clearOidcStateCookie());
+    return new Response("Nie udało się bezpiecznie zakończyć logowania.", { status: 401, headers });
   }
 }
