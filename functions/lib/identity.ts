@@ -175,8 +175,8 @@ export async function verifyAccessToken(
     validSignature = await crypto.subtle.verify(
       "RSASSA-PKCS1-v1_5",
       key,
-      decodeBase64Url(parts[2]),
-      new TextEncoder().encode(parts[0] + "." + parts[1]),
+      toArrayBuffer(decodeBase64Url(parts[2])),
+      toArrayBuffer(new TextEncoder().encode(parts[0] + "." + parts[1])),
     );
   } catch {
     return { ok: false, reason: "invalid_token" };
