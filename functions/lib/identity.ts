@@ -101,7 +101,7 @@ async function getSigningKey(jwksUrl: string, kid: string): Promise<CryptoKey | 
   }
 
   const candidate = jwks.keys?.find((key) => {
-    const item = key as JsonWebKey & { kid?: string; alg?: string; use?: string; key_ops?: string[] };
+    const item = key as unknown as { kid?: string; kty?: string; alg?: string; use?: string; key_ops?: string[] };
     return item.kid === kid && item.kty === "RSA" &&
       (item.alg === undefined || item.alg === "RS256") &&
       (item.use === undefined || item.use === "sig") &&
@@ -145,7 +145,7 @@ export async function verifyAccessToken(
   }
 
   if (header.alg !== "RS256" || typeof header.kid !== "string" || !header.kid ||
-      (Array.isArray(header.crit) && header.crit.length > 0)) {
+      (header.crit !== undefined && (!Array.isArray(header.crit) || header.crit.length > 0))) {
     return { ok: false, reason: "invalid_token" };
   }
 
