@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest";
 import {
-  beginLogin, decryptSessionValue, encryptSessionValue, readSessionCookie,
-  requireSameOrigin, type AuthEnv,
+  beginLogin, clearOidcStateCookie, decryptSessionValue, encryptSessionValue, oidcStateCookie,
+  readOidcStateCookie, readSessionCookie, requireSameOrigin, type AuthEnv,
 } from "../functions/lib/auth-session";
 import type { D1Database } from "../functions/lib/memory-store";
 
@@ -52,6 +52,17 @@ describe("CORTANA BFF session primitives", () => {
     }), env)).toBeNull();
   });
 
+  it("binds the OIDC state to a short-lived HttpOnly browser cookie", () => {
+    const state = "S".repeat(43);
+    const request = new Request("https://core.example/api/auth/callback?state=" + state, {
+      headers: { Cookie: oidcStateCookie(state) },
+    });
+    expect(readOidcStateCookie(request)).toBe(state);
+    expect(oidcStateCookie(state)).toContain("HttpOnly; Secure; SameSite=Lax; Max-Age=600");
+    expect(clearOidcStateCookie()).toContain("Max-Age=0");
+    expect(readOidcStateCookie(new Request(request.url))).toBeNull();
+  });
+
   it("requires an exact same-origin header for state-changing requests", () => {
     expect(requireSameOrigin(new Request("https://core.example/api/auth/logout", {
       method: "POST", headers: { Origin: "https://core.example" },
@@ -91,7 +102,7 @@ describe("CORTANA BFF session primitives", () => {
     expect(authorizationUrl.searchParams.get("nonce")).toMatch(/^[A-Za-z0-9_-]{43}$/);
     expect(writes).toHaveLength(1);
     expect(writes[0][0]).toContain("INSERT INTO oidc_transactions");
-    expect(writes[0][2]).not.toBe(authorizationUrl.searchParams.get("state"));
+    expect(writes[0][1]).not.toBe(authorizationUrl.searchParams.get("state"));
     expect(writes[0][4]).toBe("/dashboard");
   });
 
