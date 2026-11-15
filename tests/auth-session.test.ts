@@ -36,8 +36,8 @@ describe("CORTANA BFF session primitives", () => {
     const env = makeEnv();
     const ciphertext = await encryptSessionValue(env, "token-set");
     const [iv, data] = ciphertext.split(".");
-    const last = data.slice(-1) === "A" ? "B" : "A";
-    await expect(decryptSessionValue(env, iv + "." + data.slice(0, -1) + last)).rejects.toThrow();
+    const first = data[0] === "A" ? "B" : "A";
+    await expect(decryptSessionValue(env, iv + "." + first + data.slice(1))).rejects.toThrow();
   });
 
   it("accepts only the configured opaque session cookie", () => {

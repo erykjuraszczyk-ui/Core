@@ -32,7 +32,7 @@ Do not commit production secrets or use Vite `VITE_*` variables for credentials.
 
 ## Security controls
 
-- Authorization Code + PKCE S256; one-time state and nonce; ten-minute transaction expiry.
+- Authorization Code + PKCE S256; one-time state and nonce; ten-minute transaction expiry. State is also bound to a short-lived Secure, HttpOnly, SameSite=Lax browser cookie.
 - Discovery issuer equality and HTTPS-only OIDC endpoints.
 - ID token signature, issuer, client audience, expiry, not-before and nonce validation; access token signature, issuer and API audience validation.
 - 256-bit opaque session ID; only its SHA-256 hash is stored in D1.
