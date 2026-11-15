@@ -36,7 +36,8 @@ function toArrayBuffer(bytes: Uint8Array): ArrayBuffer {
   copy.set(bytes);
   return copy.buffer;
 }
-\nfunction decodeBase64Url(value: string): Uint8Array {
+
+function decodeBase64Url(value: string): Uint8Array {
   if (!/^[A-Za-z0-9_-]+$/.test(value)) throw new Error("invalid_base64url");
   const normalized = value.replace(/-/g, "+").replace(/_/g, "/");
   const padded = normalized + "=".repeat((4 - normalized.length % 4) % 4);
