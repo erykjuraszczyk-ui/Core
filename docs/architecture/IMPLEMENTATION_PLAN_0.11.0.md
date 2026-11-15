@@ -110,6 +110,12 @@
 - No automatic code-generation/commit/merge privileges for the agent.
 - No local/cloud bidirectional sync before conflict rules are approved.
 
-## Unresolved question
+## Resolved architecture decision
 
-- **Q-001 — Authentication/session provider:** Which account/session system should issue short-lived credentials for Android and Cortana World? This blocks M2 and native cross-device memory access; it does not block M0 or the browser-facing contract.
+- **Q-001 — RESOLVED:** Auth0 as the initial OpenID Provider, OIDC Authorization Code + PKCE S256 for public clients.
+- Browser and World 3D use a Core-managed backend-for-frontend session with Secure, HttpOnly, SameSite cookies.
+- Android uses the system browser / Custom Tabs and PKCE S256; protect refresh-token material with Android Keystore.
+- Core validates JWT signatures through JWKS and checks issuer, audience, expiry, not-before, algorithms and scopes.
+- Keep OIDC provider-specific code behind an adapter. No production tenant or secrets are provisioned by this decision.
+
+**M2 entry gate:** confirm Auth0 tenant/client configuration, exact redirect URIs, logout/revocation behaviour, token rotation, CSRF/state/nonce checks, and security tests. Native cross-device memory remains disabled until that gate passes.
