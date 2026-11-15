@@ -26,7 +26,7 @@ Required bindings / secrets:
 - `AUTH_CLIENT_SECRET`: server-side confidential web application secret.
 - `AUTH_REDIRECT_URI`: exact callback URL, e.g. `https://YOUR_CORE_HOST/api/auth/callback`.
 - `AUTH_SESSION_ENCRYPTION_KEY`: base64url-encoded 32-byte random AES-256 key.
-- Optional `AUTH_POST_LOGOUT_REDIRECT_URI`, `AUTH_COOKIE_NAME`, `AUTH_SESSION_TTL_SECONDS`, `AUTH_SCOPE`.
+- Optional `AUTH_COOKIE_NAME`, `AUTH_SESSION_TTL_SECONDS`, `AUTH_SCOPE`.
 
 Do not commit production secrets or use Vite `VITE_*` variables for credentials. Configure Auth0 Allowed Callback URLs and Allowed Logout URLs to match exact deployed URLs. Enable Refresh Token Rotation and reuse detection in the Auth0 application settings; request `offline_access`.
 
