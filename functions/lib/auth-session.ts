@@ -170,6 +170,25 @@ export function readSessionCookie(request: Request, env: AuthEnv): string | null
 export function sessionCookie(env: AuthEnv, value: string, maxAge: number): string {
   return nameCookie(env, value, maxAge);
 }
+export function oidcStateCookie(state: string, maxAge = TRANSACTION_TTL): string {
+  return "__Host-cortana_oidc_state=" + state + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + Math.max(0, maxAge);
+}
+
+export function readOidcStateCookie(request: Request): string | null {
+  const cookie = request.headers.get("Cookie") || "";
+  for (const item of cookie.split(";")) {
+    const separator = item.indexOf("=");
+    if (separator < 0 || item.slice(0, separator).trim() !== "__Host-cortana_oidc_state") continue;
+    const value = item.slice(separator + 1).trim();
+    return /^[A-Za-z0-9_-]{43}$/.test(value) ? value : null;
+  }
+  return null;
+}
+
+export function clearOidcStateCookie(): string {
+  return oidcStateCookie("", 0);
+}
+
 function nameCookie(env: AuthEnv, value: string, maxAge: number): string {
   return cookieName(env) + "=" + value + "; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=" + Math.max(0, maxAge);
 }
